@@ -37,7 +37,17 @@ The Dracory project is a Go framework that provides various utilities, including
 
 ## Environment Variables
 
+The Dracory framework provides easy access to environment variables
+using the `env` package.
+
 For information on environment variables, see the [env/README.md](env/README.md) file.
+
+## Database
+
+The database package provides database interaction functionalities for the Dracory framework.
+It offers a set of tools for interacting with various database systems.
+
+For more information, see the [database/README.md](database/README.md) file.
 
 
 ## Running a Web Server
