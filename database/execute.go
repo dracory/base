@@ -9,7 +9,8 @@ import (
 // containing information about the execution, or an error if the query failed.
 //
 // The context is used to control the execution of the query, allowing for
-// cancellation and timeout control.
+// cancellation and timeout control. It also allows to be used with
+// DB, Tx, and Conn.
 //
 // Example usage:
 //

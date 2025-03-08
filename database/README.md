@@ -31,11 +31,20 @@ if db == nil {
 defer db.Close()
 ```
 
-- Example of executing a query
+- Example of executing a raw query
 
 ```go
-dbCtx := database.Context(context.Background(), db)
+// using DB
+dbCtx := Context(context.Background(), db)
 rows, err := Query(dbCtx, "SELECT * FROM users")
+if err != nil {
+     log.Fatalf("Failed to execute query: %v", err)
+}
+defer rows.Close()
+
+// using transaction
+txCtx := Context(context.Background(), tx)
+rows, err := Query(txCtx, "SELECT * FROM users")
 if err != nil {
      log.Fatalf("Failed to execute query: %v", err)
 }
@@ -45,9 +54,35 @@ defer rows.Close()
 - Example of inserting data
 
 ```go
-dbCtx := database.Context(context.Background(), db)
+// using DB
+dbCtx := Context(context.Background(), db)
 _, err := Execute(dbCtx, "INSERT INTO users (name, email) VALUES (?, ?)", "John Doe", "a4lGw@example.com")
 if err != nil {
      log.Fatalf("Failed to insert data: %v", err)
+}
+
+// using transaction
+txCtx := Context(context.Background(), tx)
+_, err := Execute(txCtx, "INSERT INTO users (name, email) VALUES (?, ?)", "John Doe", "a4lGw@example.com")
+if err != nil {
+     log.Fatalf("Failed to insert data: %v", err)
+}
+```
+
+- Select rows (as map[string]string)
+
+```go
+mappedRows, err := database.SelectToMapString(store.toQuerableContext(ctx), sqlStr, params...)
+if err != nil {
+     log.Fatalf("Failed to select rows: %v", err)
+}
+```
+
+- Select rows (as map[string]any)
+
+```go
+mappedRows, err := database.SelectToMapAny(store.toQuerableContext(ctx), sqlStr, params...)
+if err != nil {
+     log.Fatalf("Failed to select rows: %v", err)
 }
 ```

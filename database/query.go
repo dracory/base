@@ -7,7 +7,9 @@ import (
 
 // Query executes a SQL query in the given context and returns a *sql.Rows object containing the query results.
 //
-// The context is used to control the execution of the query, allowing for cancellation and timeout control.
+// The context is used to control the execution of the query, allowing
+// for cancellation and timeout control. It also allows to be used with
+// DB, Tx, and Conn.
 //
 // Example usage:
 //
