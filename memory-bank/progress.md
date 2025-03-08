@@ -6,6 +6,7 @@
 - Identified key directories and functionalities.
 - Updated `activeContext.md`.
 - Confirmed that the BBCode tests are working fine.
+- Added web server example to README.md.
 
 Next steps:
 - None. The current task is complete.

@@ -35,3 +35,37 @@ The Dracory project is a Go framework that provides various utilities, including
 *   Web server functionality
 
 The BBCode tests are working fine.
+
+## Running a Web Server
+
+Here's an example of how to run a web server using Dracory:
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/dracory/base/server"
+)
+
+func main() {
+	// Define the handler function
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello, Dracory!")
+	}
+
+	// Define the server options
+	options := server.Options{
+		Host:    "localhost",
+		Port:    "8080",
+		Handler: handler,
+	}
+
+	// Start the server
+	_, err := server.Start(options)
+	if err != nil {
+		panic(err)
+	}
+}
