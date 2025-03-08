@@ -12,14 +12,21 @@ package arr
 //
 // Returns:
 // - []T: the new slice
+//
+// Example:
+//  arr := []int{1, 2, 3, 4}
+//  result := IndexMoveDown(arr, 1)
+//  // result is now [1, 4, 2, 3]
 func IndexMoveDown[T any](slice []T, index int) []T {
 	if index < 0 || index >= len(slice)-1 {
 		return slice // Nothing to move or invalid index
 	}
 
+	// Get the current element and the element below it
 	current := slice[index]
 	lower := slice[index+1]
 
+	// Swap the two elements
 	slice[index] = lower
 	slice[index+1] = current
 

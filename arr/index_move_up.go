@@ -12,11 +12,17 @@ package arr
 //
 // Returns:
 // - []T: the new slice
+//
+// Example:
+// 	indices := []int{1, 2, 3, 4, 5}
+// 	IndexMoveUp(indices, 2)
+// 	fmt.Println(indices) // [1, 3, 2, 4, 5]
 func IndexMoveUp[T any](slice []T, index int) []T {
 	if index <= 0 || index >= len(slice) {
 		return slice // Nothing to move or invalid index
 	}
 
+	// Swap the elements at the given index and the element above it
 	current := slice[index]
 	upper := slice[index-1]
 
