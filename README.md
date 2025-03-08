@@ -18,7 +18,8 @@ This project is dual-licensed under the following terms:
 go get github.com/dracory/base
 ```
 
-## Investigation Summary
+
+## About Dracory
 
 The Dracory project is a Go framework that provides various utilities, including:
 
@@ -34,7 +35,10 @@ The Dracory project is a Go framework that provides various utilities, including
 *   Date and datetime validation
 *   Web server functionality
 
-The BBCode tests are working fine.
+## Environment Variables
+
+For information on environment variables, see the [env/README.md](env/README.md) file.
+
 
 ## Running a Web Server
 

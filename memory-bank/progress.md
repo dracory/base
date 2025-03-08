@@ -7,6 +7,8 @@
 - Updated `activeContext.md`.
 - Confirmed that the BBCode tests are working fine.
 - Added web server example to README.md.
+- Added environment variable documentation to README.md.
+- Moved environment variable documentation to env/README.md and updated main README.
 
 Next steps:
 - None. The current task is complete.
