@@ -47,7 +47,7 @@ var replacements = map[string]string{
 	`\[list\]` + content + `\[/list\]`:   `<ul>$1</ul>`,
 	`\[list=1\]` + content + `\[/list\]`: `<ol>$1</ol>`,
 	`\[item\]` + content + `\[/item\]`:   `<li>$1</li>`,
-	`\\*` + content + `\\n`:              `<li>$1</li>`,
+	"\\*" + content + "\n":               `<li>$1</li>`,
 
 	// Formatting
 	`\[bold\]` + content + `\[/bold\]`:           `<b>$1</b>`,
@@ -56,6 +56,15 @@ var replacements = map[string]string{
 	`\[strike\]` + content + `\[/strike\]`:       `<s>$1</s>`,
 	`\[color=(.*?)\]` + content + `\[/color\]`:   `<span style="color:$1">$2</span>`,
 	`\[size=(.*?)\]` + content + `\[/size\]`:     `<span style="font-size:$1">$2</span>`,
+
+	// Formatted text (short)
+	`\[b\]` + content + `\[/b\]`: `<b>$1</b>`,
+	`\[i\]` + content + `\[/i\]`: `<i>$1</i>`,
+	`\[u\]` + content + `\[/u\]`: `<u>$1</u>`,
+	`\[s\]` + content + `\[/s\]`: `<s>$1</s>`,
+
+	// Email
+	`\[email\]` + content + `\[/email\]`: `<a href="mailto:$1">$1</a>`,
 
 	// Links
 	`\[url\]` + content + `\[/url\]`:       `<a href="$1">$1</a>`,
@@ -70,25 +79,35 @@ var replacements = map[string]string{
 	`\[div\]` + content + `\[/div\]`:         `<div>$1</div>`,
 
 	// Divider
-	`\[divider\]` + content + `\[/divider\]`: `<hr />`,
+	`\[divider\]` + content + `\[/divider\]`: `<hr />$1<hr />`,
+	`\[rule\]` + content + `\[/rule\]`:       `<hr />$1<hr />`,
 	`\[rule\]`:                               `<hr />`,
-	`\[rule\]` + content + `\[/rule\]`:       `<hr />`,
-	`\[hr\]` + content + `\[/hr\]`:           `<hr />`,
+	`\[hr\]` + content + `\[/hr\]`:           `<hr />$1<hr />`,
 	`\[hr]`:                                  `<hr />`,
 	`\[hr=(.*?)\]`:                           `<hr />`,
 
-	// Misc
+	// Line break
+	`\[break\]` + content + `\[/break\]`: `<br />$1<br />`,
 	`\[break\]`:                          `<br />`,
-	`\[break\]` + content + `\[/break\]`: `<br />`,
-	`\[br\]` + content + `\[/br\]`:       `<br />`,
+	`\[br\]` + content + `\[/br\]`:       `<br />$1<br />`,
 	`\[br\]`:                             `<br />`,
-	`\[email\]` + content + `\[/email\]`: `<a href="mailto:$1">$1</a>`,
 }
 
+// BbcodeToHtml takes a string written in BBCode and returns the HTML
+// representation of it.
+//
+// The function uses a map of regular expressions to perform the replacements.
+// The regular expressions are matched against the input string and replaced
+// with the corresponding HTML.
+//
+// The function returns the HTML representation of the input string.
 func BbcodeToHtml(input string) string {
 	// Perform replacements
 	for bbcode, html := range replacements {
+		// Create a regular expression from the BBCode
 		re := regexp.MustCompile(bbcode)
+
+		// Replace the BBCode with the HTML
 		input = re.ReplaceAllString(input, html)
 	}
 
