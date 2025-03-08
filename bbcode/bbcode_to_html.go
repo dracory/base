@@ -79,18 +79,14 @@ var replacements = map[string]string{
 	`\[div\]` + content + `\[/div\]`:         `<div>$1</div>`,
 
 	// Divider
-	`\[divider\]` + content + `\[/divider\]`: `<hr />$1<hr />`,
-	`\[rule\]` + content + `\[/rule\]`:       `<hr />$1<hr />`,
-	`\[rule\]`:                               `<hr />`,
-	`\[hr\]` + content + `\[/hr\]`:           `<hr />$1<hr />`,
-	`\[hr]`:                                  `<hr />`,
-	`\[hr=(.*?)\]`:                           `<hr />`,
+	`\[divider\]`:  `<hr />`,
+	`\[rule\]`:     `<hr />`,
+	`\[hr\]`:       `<hr />`,
+	`\[hr=(.*?)\]`: `<hr style="border-color:$1" />`,
 
 	// Line break
-	`\[break\]` + content + `\[/break\]`: `<br />$1<br />`,
-	`\[break\]`:                          `<br />`,
-	`\[br\]` + content + `\[/br\]`:       `<br />$1<br />`,
-	`\[br\]`:                             `<br />`,
+	`\[break\]`: `<br />`,
+	`\[br\]`:    `<br />`,
 }
 
 // BbcodeToHtml takes a string written in BBCode and returns the HTML
@@ -102,12 +98,30 @@ var replacements = map[string]string{
 //
 // The function returns the HTML representation of the input string.
 func BbcodeToHtml(input string) string {
-	// Perform replacements
-	for bbcode, html := range replacements {
-		// Create a regular expression from the BBCode
-		re := regexp.MustCompile(bbcode)
+	// Process patterns in a specific order to ensure correct replacements
+	// First process tags with content, then process simple tags
 
-		// Replace the BBCode with the HTML
+	// Define patterns with content
+	contentPatterns := map[string]string{
+		// Divider with content
+		`\[divider\]` + content + `\[/divider\]`: `<hr />$1<hr />`,
+		`\[rule\]` + content + `\[/rule\]`:       `<hr />$1<hr />`,
+		`\[hr\]` + content + `\[/hr\]`:           `<hr />$1<hr />`,
+
+		// Break with content
+		`\[break\]` + content + `\[/break\]`: `<br />$1<br />`,
+		`\[br\]` + content + `\[/br\]`:       `<br />$1<br />`,
+	}
+
+	// Process content patterns first
+	for bbcode, html := range contentPatterns {
+		re := regexp.MustCompile(bbcode)
+		input = re.ReplaceAllString(input, html)
+	}
+
+	// Process all other patterns
+	for bbcode, html := range replacements {
+		re := regexp.MustCompile(bbcode)
 		input = re.ReplaceAllString(input, html)
 	}
 
