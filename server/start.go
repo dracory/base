@@ -25,12 +25,21 @@ var shutdownChan = make(chan os.Signal, 1)
 // StartWebServerbserver starts the web server at the specified host and port and listens
 // for incoming requests.
 //
+// Example:
+//
+//	StartWebServer(Options{
+//	 Host: "localhost",
+//	 Port: "8080",
+//	 Handler: func(w http.ResponseWriter, r *http.Request) {},
+//	 Mode: "production",
+//	})
+//
 // Parameters:
 // - none
 //
 // Returns:
 // - none
-func StartWebServer(options Options) (server *webserver.Server, err error) {
+func Start(options Options) (server *webserver.Server, err error) {
 	addr := options.Host + ":" + options.Port
 	cfmt.Infoln("Starting server on " + options.Host + ":" + options.Port + " ...")
 	if options.URL != "" {
@@ -55,10 +64,8 @@ func StartWebServer(options Options) (server *webserver.Server, err error) {
 
 	// Wait for a shutdown signal
 	cfmt.Infoln("Server is running, press Ctrl+C to stop it.")
-	select {
-	case sig := <-shutdownChan:
-		cfmt.Infoln("Received signal:", sig)
-	}
+	sig := <-shutdownChan
+	cfmt.Infoln("Received signal:", sig)
 	cfmt.Infoln("Shutting down server...")
 	server.Shutdown(context.Background())
 	if options.Mode != `testing` {

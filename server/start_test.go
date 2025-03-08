@@ -20,7 +20,7 @@ func TestStartWebServer(t *testing.T) {
 	// Start the web server in a goroutine
 	go func() {
 		defer wg.Done()
-		StartWebServer(Options{
+		Start(Options{
 			Host:    "localhost",
 			Port:    "8080",
 			Handler: func(w http.ResponseWriter, r *http.Request) {},
