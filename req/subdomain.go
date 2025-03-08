@@ -24,16 +24,13 @@ func Subdomain(r *http.Request) (string, error) {
 		return "", nil
 	}
 
-	// Get the host of the request
-	host := r.URL.Host
-
 	// If the host is "localhost", there is no subdomain
-	if host == "localhost" {
+	if r.URL.Host == "localhost" {
 		return "", nil
 	}
 
 	// Find the index of the first dot in the host
-	i := strings.Index(host, ".")
+	i := strings.Index(r.URL.Host, ".")
 
 	// If there is no dot, there is no subdomain
 	if i == -1 {
@@ -41,7 +38,7 @@ func Subdomain(r *http.Request) (string, error) {
 	}
 
 	// The subdomain is the part of the host before the first dot
-	subdomain := host[:i]
+	subdomain := r.URL.Host[:i]
 
 	return subdomain, nil
 }
