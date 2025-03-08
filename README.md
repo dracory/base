@@ -17,3 +17,21 @@ This project is dual-licensed under the following terms:
 ```
 go get github.com/dracory/base
 ```
+
+## Investigation Summary
+
+The Dracory project is a Go framework that provides various utilities, including:
+
+*   BBCode to HTML conversion
+*   Slice manipulation
+*   Database interaction
+*   Error handling and validation
+*   Image manipulation
+*   URL downloading
+*   QR code generation
+*   HTTP request handling
+*   Timezone conversion
+*   Date and datetime validation
+*   Web server functionality
+
+The BBCode tests are working fine.

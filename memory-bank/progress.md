@@ -2,4 +2,10 @@
 
 - Created memory bank files.
 - Identified failing tests in `bbcode_to_html_test.go`.
-- Next steps: Analyze the failing tests and the `bbcode_to_html.go` file to identify the root cause of the test failures.
+- Performed a general investigation of the Dracory project.
+- Identified key directories and functionalities.
+- Updated `activeContext.md`.
+- Confirmed that the BBCode tests are working fine.
+
+Next steps:
+- None. The current task is complete.
