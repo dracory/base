@@ -20,8 +20,11 @@ import (
 // The function is useful when you want to find the type of the database,
 // without knowing it during compilation.
 //
+// Note that the implementation uses reflection to get the private fields of sql.Tx and sql.Conn.
+// This is done to support the use of sql.Tx and sql.Conn as QueryableInterface.
+//
 // Parameters:
-// - db *sql.DB: the database connection
+// - q QueryableInterface: the database connection or transaction or connection
 //
 // Returns:
 // - string: the type of the database

@@ -9,8 +9,13 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// initSqliteDB creates a new SQLite database connection in memory.
+//
+// Returns:
+// - *sql.DB: the database connection
+// - error: the error if any
 func initSqliteDB() (*sql.DB, error) {
-
+	// Create a new database connection in memory
 	db, err := Open(Options().
 		SetDatabaseType(DATABASE_TYPE_SQLITE).
 		SetDatabaseHost("").
@@ -19,14 +24,17 @@ func initSqliteDB() (*sql.DB, error) {
 		SetUserName("").
 		SetPassword(""))
 
+	// Check if there was an error
 	if err != nil {
 		return nil, err
 	}
 
+	// Check if the database connection is not nil
 	if db == nil {
 		return nil, errors.New("db is nil")
 	}
 
+	// Return the database connection
 	return db, nil
 }
 
