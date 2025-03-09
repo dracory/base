@@ -3,7 +3,6 @@ package database
 import (
 	"errors"
 
-	"github.com/georgysavva/scany/sqlscan"
 	"github.com/gouniverse/maputils"
 )
 
@@ -35,15 +34,49 @@ func SelectToMapAny(ctx QueryableContext, sqlStr string, args ...any) ([]map[str
 
 	listMap := []map[string]any{}
 
-	err := sqlscan.Select(ctx, ctx.queryable, &listMap, sqlStr, args...)
+	rows, err := ctx.queryable.QueryContext(ctx, sqlStr, args...)
 
 	if err != nil {
-		// If the error is sqlscan.NotFound, it means that the query returned no rows.
-		// In this case, we return an empty slice.
-		if sqlscan.NotFound(err) {
-			return []map[string]any{}, nil
+		return []map[string]any{}, err
+	}
+	defer rows.Close()
+
+	// Get column names
+	columns, err := rows.Columns()
+	if err != nil {
+		return []map[string]any{}, err
+	}
+
+	for rows.Next() {
+		// Create a slice of interface{} to hold the values
+		values := make([]interface{}, len(columns))
+		// Create a slice of pointers to interface{} for scanning
+		valuePtrs := make([]interface{}, len(columns))
+		for i := range values {
+			valuePtrs[i] = &values[i]
 		}
 
+		// Scan the row into the slice of pointers
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return []map[string]any{}, err
+		}
+
+		// Create a map for this row
+		row := make(map[string]any)
+		for i, col := range columns {
+			val := values[i]
+			// Handle nil values
+			if val == nil {
+				row[col] = nil
+			} else {
+				row[col] = val
+			}
+		}
+
+		listMap = append(listMap, row)
+	}
+
+	if err := rows.Err(); err != nil {
 		return []map[string]any{}, err
 	}
 
