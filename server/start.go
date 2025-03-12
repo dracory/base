@@ -20,12 +20,27 @@ const DefaultMode = ProductionMode
 
 // Options represents the configuration for the web server.
 type Options struct {
-	Host    string
-	Port    string
-	URL     string // optional, displayed in logs
-	Handler func(w http.ResponseWriter, r *http.Request)
-	Mode    string // optional, default is production, can be development or testing
+	Host     string
+	Port     string
+	URL      string // optional, displayed in logs
+	Handler  func(w http.ResponseWriter, r *http.Request)
+	Mode     string   // optional, default is production, can be development or testing
+	LogLevel LogLevel // optional, default is "info", can be "debug", "info", "error", or "none"
 }
+
+// LogLevel represents the level of logging.
+type LogLevel string
+
+const (
+	// LogLevelDebug is the debug logging level.
+	LogLevelDebug LogLevel = "debug"
+	// LogLevelInfo is the info logging level.
+	LogLevelInfo LogLevel = "info"
+	// LogLevelError is the error logging level.
+	LogLevelError LogLevel = "error"
+	// LogLevelNone is the none logging level.
+	LogLevelNone LogLevel = "none"
+)
 
 var shutdownChan = make(chan os.Signal, 1)
 
@@ -52,13 +67,20 @@ func Start(options Options) (server *webserver.Server, err error) {
 		options.Mode = DefaultMode
 	}
 
+	// Set default log level if not provided
+	if options.LogLevel == "" {
+		options.LogLevel = LogLevelInfo
+	}
+
 	// Create the server address
 	addr := options.Host + ":" + options.Port
 
 	// Log server startup
-	cfmt.Infoln("Starting server on", addr)
-	if options.URL != "" {
-		cfmt.Infoln("APP URL:", options.URL)
+	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
+		cfmt.Infoln("Starting server on", addr)
+		if options.URL != "" {
+			cfmt.Infoln("APP URL:", options.URL)
+		}
 	}
 
 	// Create a new web server
@@ -69,23 +91,38 @@ func Start(options Options) (server *webserver.Server, err error) {
 
 	// Start the server in a separate goroutine
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			if options.Mode == TestingMode {
-				cfmt.Errorln(err)
+				if options.LogLevel != LogLevelNone {
+					cfmt.Errorln(err)
+				}
 			} else {
-				log.Fatal(err)
+				if options.LogLevel != LogLevelNone {
+					log.Fatal(err)
+				} else {
+					os.Exit(1)
+				}
 			}
 		}
 	}()
 
 	// Wait for a shutdown signal
-	cfmt.Infoln("Server is running, press Ctrl+C to stop it.")
+	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
+		cfmt.Infoln("Server is running, press Ctrl+C to stop it.")
+	}
+
 	sig := <-shutdownChan
-	cfmt.Infoln("Received signal:", sig)
-	cfmt.Infoln("Shutting down server...")
+
+	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
+		cfmt.Infoln("Received signal:", sig)
+		cfmt.Infoln("Shutting down server...")
+	}
 
 	// Shutdown the server
 	if err := server.Shutdown(context.Background()); err != nil {
+		if options.LogLevel != LogLevelNone {
+			cfmt.Errorln("Error shutting down server:", err)
+		}
 		return nil, err
 	}
 

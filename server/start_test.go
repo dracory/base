@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"syscall"
@@ -10,6 +9,7 @@ import (
 )
 
 func TestStartWebServer(t *testing.T) {
+	url := "http://localhost:8080"
 	var wg sync.WaitGroup
 	wg.Add(1)
 
@@ -25,10 +25,15 @@ func TestStartWebServer(t *testing.T) {
 	}()
 
 	// Wait for the server to start
-	time.Sleep(1 * time.Second)
+	for {
+		_, err := http.Get(url)
+		if err == nil {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 
 	// Check if the server is running
-	url := fmt.Sprintf("http://%s:%s", "localhost", "8080")
 	resp, err := http.Get(url)
 	if err != nil {
 		t.Errorf("Failed to make a request to the server: %v", err)
