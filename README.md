@@ -34,6 +34,7 @@ The Dracory project is a Go framework that provides various utilities, including
 *   Timezone conversion
 *   Date and datetime validation
 *   Web server functionality
+*   Command line functionality
 
 ## Environment Variables
 
