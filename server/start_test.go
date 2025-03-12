@@ -7,13 +7,9 @@ import (
 	"syscall"
 	"testing"
 	"time"
-	// "project/config"
-	// "project/internal/testutils"
 )
 
 func TestStartWebServer(t *testing.T) {
-	// testutils.Setup()
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 
