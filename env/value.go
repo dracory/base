@@ -8,7 +8,13 @@ import (
 	"github.com/gouniverse/envenc"
 )
 
-// Env returns the value for an environment key
+// Value returns the value for an environment key
+//
+// Parameters:
+//   - key: The environment key
+//
+// Returns:
+//   - The value for the environment key
 func Value(key string) string {
 	value := os.Getenv(key)
 
@@ -17,6 +23,35 @@ func Value(key string) string {
 	return valueProcessed
 }
 
+// ValueOr returns the value for an environment key with a default value
+//
+// Parameters:
+//   - key: The environment key
+//   - defaultValue: The default value
+//
+// Returns:
+//   - The value for the environment key
+func ValueOr(key string, defaultValue string) string {
+	value := os.Getenv(key)
+
+	valueProcessed := envProcess(value)
+
+	if valueProcessed == "" {
+		return defaultValue
+	}
+
+	return valueProcessed
+}
+
+// EnvProcess processes the value for an environment key
+//
+// This function handles base64 and obfuscated prefixes.
+//
+// Args:
+//   - value: The value to process
+//
+// Returns:
+//   - The processed value
 func envProcess(value string) string {
 	valueTrimmed := strings.TrimSpace(value)
 

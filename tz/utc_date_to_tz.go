@@ -20,5 +20,5 @@ import (
 func UTCDateToTz(utcDateString string, timezone string) (string, error) {
 	parsedDate := carbon.Parse(utcDateString, carbon.UTC)
 	dateInTz := parsedDate.SetTimezone(timezone)
-	return dateInTz.ToDateString(), nil
+	return dateInTz.ToDateString(), parsedDate.Error
 }
