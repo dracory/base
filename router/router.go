@@ -230,10 +230,23 @@ func (r *routerImpl) routeMatches(route RouteInterface, req *http.Request) bool 
 		return false
 	}
 
-	// For simplicity, we'll do exact path matching
-	// In a real implementation, you might want to use a more sophisticated router like Chi
 	routePath := r.prefix + route.GetPath()
-	return routePath == req.URL.Path
+	requestPath := req.URL.Path
+
+	// Handle catch-all routes
+	if routePath == "/*" || routePath == "/**" {
+		return true
+	}
+
+	// Handle wildcard patterns at the end of the path
+	if len(routePath) > 2 && routePath[len(routePath)-2:] == "/*" {
+		// Check if the base path matches
+		basePath := routePath[:len(routePath)-2]
+		return len(requestPath) >= len(basePath) && requestPath[:len(basePath)] == basePath
+	}
+
+	// For regular paths, do exact matching
+	return routePath == requestPath
 }
 
 // wrapWithMiddlewares wraps a route's handler with its middlewares and the router's middlewares
