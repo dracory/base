@@ -25,8 +25,16 @@ func TestValue_Base64(t *testing.T) {
 func TestValue_InvalidBase64(t *testing.T) {
 	// Test with an invalid base64 encoded environment variable
 	os.Setenv("TEST_KEY_INVALID_BASE64", "base64:invalid_value==")
-	if value := Value("TEST_KEY_INVALID_BASE64"); !strings.Contains(value, "illegal base64 data") {
-		t.Errorf("Expected an error message containing 'illegal base64 data', got '%s'", value)
+	if value := Value("TEST_KEY_INVALID_BASE64"); value != "" {
+		t.Errorf("Expected an empty string, got '%s'", value)
+	}
+}
+
+func TestValueOrError_InvalidBase64(t *testing.T) {
+	// Test with an invalid base64 encoded environment variable
+	os.Setenv("TEST_KEY_INVALID_BASE64", "base64:invalid_value==")
+	if _, err := ValueOrError("TEST_KEY_INVALID_BASE64"); !strings.Contains(err.Error(), "illegal base64 data") {
+		t.Errorf("Expected an error message containing 'illegal base64 data', got '%s'", err.Error())
 	}
 }
 

@@ -2,6 +2,8 @@ package env
 
 import (
 	"encoding/base64"
+	"errors"
+	"log"
 	"os"
 	"strings"
 
@@ -9,6 +11,13 @@ import (
 )
 
 // Value returns the value for an environment key
+//
+// If the value is not found, or if the value cannot be processed,
+// returns an empty string.
+//
+// If you want a default value, use ValueOrDefault.
+// If you want an error, use ValueOrError.
+// If you want a panic, use ValueOrPanic.
 //
 // Parameters:
 //   - key: The environment key
@@ -18,7 +27,11 @@ import (
 func Value(key string) string {
 	value := os.Getenv(key)
 
-	valueProcessed := envProcess(value)
+	valueProcessed, err := envProcess(value)
+
+	if valueProcessed == "" || err != nil {
+		return ""
+	}
 
 	return valueProcessed
 }
@@ -31,13 +44,41 @@ func Value(key string) string {
 //
 // Returns:
 //   - The value for the environment key
-func ValueOr(key string, defaultValue string) string {
+func ValueOrDefault(key string, defaultValue string) string {
 	value := os.Getenv(key)
 
-	valueProcessed := envProcess(value)
+	valueProcessed, err := envProcess(value)
 
-	if valueProcessed == "" {
+	if valueProcessed == "" || err != nil {
 		return defaultValue
+	}
+
+	return valueProcessed
+}
+
+func ValueOrError(key string) (string, error) {
+	value := os.Getenv(key)
+
+	if value == "" {
+		return "", errors.New("value not found")
+	}
+
+	valueProcessed, err := envProcess(value)
+
+	return valueProcessed, err
+}
+
+func ValueOrPanic(key string) string {
+	value := os.Getenv(key)
+
+	if value == "" {
+		log.Panicf("Environment variable %s is required but not set", key)
+	}
+
+	valueProcessed, err := envProcess(value)
+
+	if valueProcessed == "" || err != nil {
+		log.Panicf("Environment variable %s is required but not set", key)
 	}
 
 	return valueProcessed
@@ -52,32 +93,34 @@ func ValueOr(key string, defaultValue string) string {
 //
 // Returns:
 //   - The processed value
-func envProcess(value string) string {
+func envProcess(value string) (string, error) {
 	valueTrimmed := strings.TrimSpace(value)
+	isBase64 := strings.HasPrefix(valueTrimmed, "base64:")
+	isObfuscated := strings.HasPrefix(valueTrimmed, "obfuscated:")
 
-	if strings.HasPrefix(valueTrimmed, "base64:") {
+	if isBase64 {
 		valueNoPrefix := strings.TrimPrefix(valueTrimmed, `base64:`)
 
 		valueDecoded, err := base64.URLEncoding.DecodeString(valueNoPrefix)
 
 		if err != nil {
-			return err.Error()
+			return "", err
 		}
 
-		return string(valueDecoded)
+		return string(valueDecoded), nil
 	}
 
-	if strings.HasPrefix(valueTrimmed, "obfuscated:") {
+	if isObfuscated {
 		valueNoPrefix := strings.TrimPrefix(valueTrimmed, `obfuscated:`)
 
 		valueDecoded, err := envenc.Deobfuscate(valueNoPrefix)
 
 		if err != nil {
-			return err.Error()
+			return "", err
 		}
 
-		return string(valueDecoded)
+		return string(valueDecoded), nil
 	}
 
-	return valueTrimmed
+	return valueTrimmed, nil
 }

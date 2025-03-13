@@ -7,6 +7,16 @@ import (
 )
 
 // Initialize initializes the environment variables
+//
+// Business logic:
+// - Loads .env file (by default, no need to provide path)
+// - Loads env files from the provided paths, if any
+//
+// Parameters:
+// - envFilePath: slice of strings representing the paths to the .env files to load
+//
+// Returns:
+// - None
 func Initialize(envFilePath ...string) {
 	paths := []string{".env"}
 
