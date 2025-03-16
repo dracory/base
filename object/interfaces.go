@@ -5,10 +5,10 @@ package object
 type PropertyObjectInterface interface {
 	Clear()
 	Count() int
-	Get(key string) (any, error)
+	Get(key string) any
 	Has(key string) bool
 	Keys() []string
-	Set(key string, value any)
+	Set(key string, value any) error
 	Unset(key string)
 }
 
@@ -19,7 +19,7 @@ type SerializableInterface interface {
 	GetID() string
 
 	// SetID sets the unique identifier for this object
-	SetID(id string) error
+	SetID(id string)
 
 	// ToJSON serializes the object to JSON
 	ToJSON() ([]byte, error)

@@ -1,4 +1,4 @@
-package testutils
+package test
 
 import (
 	"io"
@@ -53,18 +53,18 @@ func (r *TestHTTPRequest) WithFormBody(formBody string) *TestHTTPRequest {
 // Execute executes the request against the provided handler
 func (r *TestHTTPRequest) Execute(handler http.Handler) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(r.Method, r.Path, r.Body)
-	
+
 	// Set headers
 	for key, value := range r.Headers {
 		req.Header.Set(key, value)
 	}
-	
+
 	// Create a response recorder
 	recorder := httptest.NewRecorder()
-	
+
 	// Serve the request
 	handler.ServeHTTP(recorder, req)
-	
+
 	return recorder
 }
 
@@ -106,7 +106,7 @@ func (s *TestHTTPServer) Do(req *http.Request) (*http.Response, error) {
 	// Update the URL to point to the test server
 	req.URL.Scheme = "http"
 	req.URL.Host = strings.TrimPrefix(s.URL(), "http://")
-	
+
 	// Perform the request
 	client := &http.Client{}
 	return client.Do(req)

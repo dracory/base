@@ -49,19 +49,19 @@ func TestSerializablePropertyObjectErrors(t *testing.T) {
 	spo := object.NewSerializablePropertyObject()
 
 	// Test error case - setting an empty ID
-	err := spo.SetID("")
-	if err == nil {
-		t.Error("SetID should return an error for empty ID")
+	spo.SetID("")
+	if spo.GetID() == "" {
+		t.Error("SetID should not allow empty ID")
 	}
 
 	// Test error case - getting a non-existent property
-	_, err = spo.Get("nonexistent")
-	if err == nil {
-		t.Error("Get should return an error for non-existent property")
+	propertyValue := spo.Get("nonexistent")
+	if propertyValue != nil {
+		t.Error("Get should return nil for non-existent property")
 	}
 
 	// Test error case - deserializing invalid JSON
-	err = spo.FromJSON([]byte("invalid json"))
+	err := spo.FromJSON([]byte("invalid json"))
 	if err == nil {
 		t.Error("FromJSON should return an error for invalid JSON")
 	}
@@ -79,10 +79,7 @@ func testIDOperations(t *testing.T, spo object.SerializablePropertyObjectInterfa
 
 	// Set a new ID
 	newID := "test-id-123"
-	err := spo.SetID(newID)
-	if err != nil {
-		t.Fatalf("SetID should not return an error: %v", err)
-	}
+	spo.SetID(newID)
 
 	// Get the ID and verify it matches what was set
 	retrievedID := spo.GetID()
@@ -139,13 +136,10 @@ func testSerialization(t *testing.T, spo object.SerializablePropertyObjectInterf
 	verifyProperty(t, newSpo, "name", "Test Object")
 	verifyNumericProperty(t, newSpo, "version", 1)
 	verifyProperty(t, newSpo, "enabled", true)
-	
+
 	// Verify slice property
-	tags, err := newSpo.Get("tags")
-	if err != nil {
-		t.Fatalf("Get should not return an error for key 'tags': %v", err)
-	}
-	
+	tags := newSpo.Get("tags")
+
 	// JSON unmarshaling might convert []string to []interface{}
 	switch s := tags.(type) {
 	case []string:
@@ -162,18 +156,15 @@ func testSerialization(t *testing.T, spo object.SerializablePropertyObjectInterf
 	}
 
 	// Verify map property
-	config, err := newSpo.Get("config")
-	if err != nil {
-		t.Fatalf("Get should not return an error for key 'config': %v", err)
-	}
-	
+	config := newSpo.Get("config")
+
 	// Convert both to JSON for comparison since types might differ
 	expectedJSON, _ := json.Marshal(map[string]interface{}{
 		"key1": "value1",
 		"key2": 2,
 	})
 	actualJSON, _ := json.Marshal(config)
-	
+
 	if string(expectedJSON) != string(actualJSON) {
 		t.Errorf("Property 'config' should match original value, got %s, expected %s", string(actualJSON), string(expectedJSON))
 	}
@@ -182,10 +173,7 @@ func testSerialization(t *testing.T, spo object.SerializablePropertyObjectInterf
 // Helper function to verify a property value
 func verifyProperty(t *testing.T, obj object.PropertyObjectInterface, key string, expected interface{}) {
 	t.Helper()
-	actual, err := obj.Get(key)
-	if err != nil {
-		t.Fatalf("Get should not return an error for key '%s': %v", key, err)
-	}
+	actual := obj.Get(key)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("Property '%s' should have correct value after deserialization, got %v, expected %v", key, actual, expected)
 	}
@@ -194,11 +182,8 @@ func verifyProperty(t *testing.T, obj object.PropertyObjectInterface, key string
 // Helper function to verify a numeric property value with type flexibility
 func verifyNumericProperty(t *testing.T, obj object.PropertyObjectInterface, key string, expected float64) {
 	t.Helper()
-	actual, err := obj.Get(key)
-	if err != nil {
-		t.Fatalf("Get should not return an error for key '%s': %v", key, err)
-	}
-	
+	actual := obj.Get(key)
+
 	switch v := actual.(type) {
 	case int:
 		if float64(v) != expected {

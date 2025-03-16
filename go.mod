@@ -31,6 +31,7 @@ require (
 	github.com/gouniverse/crypto v0.2.0 // indirect
 	github.com/gouniverse/dataobject v0.3.0
 	github.com/gouniverse/hb v1.83.4 // indirect
+	github.com/gouniverse/responses v0.6.0
 	github.com/gouniverse/uid v1.5.0 // indirect
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
