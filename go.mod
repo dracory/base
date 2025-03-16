@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	github.com/darkoatanasovski/htmltags v1.0.0
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gouniverse/api v1.6.0 // indirect
@@ -29,6 +30,8 @@ require (
 	github.com/gouniverse/dataobject v0.3.0 // indirect
 	github.com/gouniverse/hb v1.83.4 // indirect
 	github.com/gouniverse/uid v1.5.0 // indirect
+	github.com/gouniverse/utils v1.45.4
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

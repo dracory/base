@@ -1,5 +1,7 @@
 github.com/boombuler/barcode v1.0.2 h1:79yrbttoZrLGkL/oOI8hBrUKucwOL0oOjUgEguGMcJ4=
 github.com/boombuler/barcode v1.0.2/go.mod h1:paBWMcWSl3LHKBqUq+rly7CNSldXjb2rDl3JlRe0mD8=
+github.com/darkoatanasovski/htmltags v1.0.0 h1:EP3O8c3vcEIotu9Dp6lDq8OWor4rYSf4mc/zORJbT5M=
+github.com/darkoatanasovski/htmltags v1.0.0/go.mod h1:FKYjT6COoJLfTjWbOcFW21/GCl8rHvgBQNZS2KpfPMU=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/disintegration/imaging v1.6.2 h1:w1LecBlG2Lnp8B3jk5zSuNqd7b4DXhcjwek1ei82L+c=
@@ -35,10 +37,14 @@ github.com/gouniverse/maputils v0.7.0 h1:qoJnY8tY5gkdyuIkwGHJYwH7It7LnCevxU+P+c4
 github.com/gouniverse/maputils v0.7.0/go.mod h1:s8HbjSvEqBl+R+bFCvFd+mY07bx7EQM5YhIjDgF26Q0=
 github.com/gouniverse/uid v1.5.0 h1:evyGegnY7+KeYirDhJntI9xmODf8jPMQw8DlMpQIPnM=
 github.com/gouniverse/uid v1.5.0/go.mod h1:06dzYTyBLOu+iRlKZ8GxzEfgDSLyoZwgKns9Fcvt7G4=
+github.com/gouniverse/utils v1.45.4 h1:WrOSdTJH+C0j7+wDypb6+cFm35anI/X6DR+hWW/s2hM=
+github.com/gouniverse/utils v1.45.4/go.mod h1:jISxax1nx2soZ+tCPkHuZV0EF7mj0lmQKlAhCQpTXRM=
 github.com/gouniverse/webserver v0.1.0 h1:dUADAFgI4QjbAGc5zjRBdy0cWm4jq9lQNCOSGyIrnos=
 github.com/gouniverse/webserver v0.1.0/go.mod h1:qiL3F774piVv8Nf3YGtRPAkMjwzfQlajmo2f024v0ao=
 github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
 github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
+github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible h1:jdpOPRN1zP63Td1hDQbZW73xKmzDvZHzVdNYxhnTMDA=
+github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible/go.mod h1:1c7szIrayyPPB/987hsnvNzLushdWf4o/79s3P08L8A=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
