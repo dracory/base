@@ -11,6 +11,7 @@ func TestFilterEmpty(t *testing.T) {
 		slice    []string
 		expected []string
 	}{
+		{"nil slice", nil, nil},
 		{"empty slice", []string{}, []string{}},
 		{"only empty strings", []string{"", "", ""}, []string{}},
 		{"mix of empty and non-empty strings", []string{"", "hello", "", "world"}, []string{"hello", "world"}},
@@ -22,6 +23,12 @@ func TestFilterEmpty(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual := FilterEmpty(tt.slice)
+			if tt.slice == nil {
+				if actual != nil {
+					t.Errorf("FilterEmpty(nil) = %v, want nil", actual)
+				}
+				return
+			}
 			if len(tt.expected) == 0 && len(actual) == 0 {
 				// special case for empty slices
 				return

@@ -1,2 +1,4 @@
 env/FileExistsTest.txt
 coverage.out
+cover.out
+coverage
