@@ -6,15 +6,9 @@ import (
 	"testing"
 
 	"github.com/dracory/base/object"
-	"github.com/dracory/base/testutils"
 )
 
 func TestSerializablePropertyObject(t *testing.T) {
-	// Setup test environment
-	testCfg := testutils.DefaultTestConfig()
-	testutils.SetupTestEnvironment(testCfg)
-	defer testutils.CleanupTestEnvironment(testCfg)
-
 	// Create a new serializable property object
 	spo := object.NewSerializablePropertyObject()
 
@@ -40,11 +34,6 @@ func TestSerializablePropertyObject(t *testing.T) {
 }
 
 func TestSerializablePropertyObjectErrors(t *testing.T) {
-	// Setup test environment
-	testCfg := testutils.DefaultTestConfig()
-	testutils.SetupTestEnvironment(testCfg)
-	defer testutils.CleanupTestEnvironment(testCfg)
-
 	// Create a new serializable property object
 	spo := object.NewSerializablePropertyObject()
 
