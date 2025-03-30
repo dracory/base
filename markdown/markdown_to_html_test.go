@@ -2,8 +2,6 @@ package markdown
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestMarkdownToHtml(t *testing.T) {
@@ -56,8 +54,13 @@ func TestMarkdownToHtml(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := MarkdownToHtml(tt.markdown)
-			assert.Equal(t, tt.html, result)
+			result, err := MarkdownToHtml(tt.markdown)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result != tt.html {
+				t.Fatalf("got %q, want %q", result, tt.html)
+			}
 		})
 	}
 }

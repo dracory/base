@@ -6,7 +6,6 @@ import (
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
 )
 
 // ToHtml converts a markdown text to html
@@ -14,11 +13,11 @@ import (
 // 1. the text is trimmed of any white spaces
 // 2. if the text is empty, it returns an empty string
 // 3. the text is converted to html using the goldmark library
-func MarkdownToHtml(text string) string {
+func MarkdownToHtml(text string) (string, error) {
 	text = strings.TrimSpace(text)
 
 	if text == "" {
-		return ""
+		return "", nil
 	}
 
 	var buf bytes.Buffer
@@ -29,13 +28,12 @@ func MarkdownToHtml(text string) string {
 			parser.WithAutoHeadingID(),
 		),
 		goldmark.WithRendererOptions(
-			// html.WithHardWraps(),
-			html.WithXHTML(),
+		// html.WithHardWraps(),			html.WithXHTML(),
 		),
 	)
 	if err := md.Convert([]byte(text), &buf); err != nil {
-		panic(err)
+		return "", err
 	}
 
-	return buf.String()
+	return buf.String(), nil
 }
