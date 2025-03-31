@@ -2,61 +2,11 @@ package steps
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sort"
 
 	"github.com/gouniverse/uid"
 )
-
-type Step struct {
-	id      string
-	name    string
-	data    map[string]any
-	handler StepHandler
-}
-
-// NewStep creates a new step with the given execution function and optional ID.
-func NewStep() StepInterface {
-	step := &Step{
-		data: make(map[string]any),
-	}
-
-	step.SetID(uid.HumanUid())
-	step.SetName("")
-
-	return step
-}
-
-func (s *Step) GetID() string {
-	return s.id
-}
-
-func (s *Step) SetID(id string) {
-	s.id = id
-}
-
-func (s *Step) GetName() string {
-	return s.name
-}
-
-func (s *Step) SetName(name string) {
-	s.name = name
-}
-
-// GetHandler returns the step's execution function
-func (s *Step) GetHandler() StepHandler {
-	return s.handler
-}
-
-// SetHandler sets the step's execution function
-func (s *Step) SetHandler(fn StepHandler) {
-	s.handler = fn
-}
-
-// Run executes the step's function with the given context
-func (s *Step) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-	return s.handler(ctx, data)
-}
 
 type Dag struct {
 	// id of the dag
@@ -179,13 +129,13 @@ func (d *Dag) RunnableList() []RunnableInterface {
 func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 	ordered, err := d.topologicalSort(d.buildDependencyGraph(ctx, data))
 	if err != nil {
-		return ctx, data, fmt.Errorf("failed to sort DAG: %w", err)
+		return ctx, data, errors.New("topological sort failed:" + err.Error())
 	}
 
 	for _, runner := range ordered {
 		ctx, data, err = runner.Run(ctx, data)
 		if err != nil {
-			return ctx, data, fmt.Errorf("failed to run step %s: %w", runner.GetID(), err)
+			return ctx, data, err
 		}
 	}
 
@@ -292,7 +242,7 @@ func (d *Dag) topologicalSort(graph map[RunnableInterface][]RunnableInterface) (
 	var visit func(node RunnableInterface) error
 	visit = func(node RunnableInterface) error {
 		if tempMark[node] {
-			return fmt.Errorf("cycle detected")
+			return errors.New("cycle detected")
 		}
 		if visited[node] {
 			return nil

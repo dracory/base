@@ -1,14 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 )
 
 func main() {
-	// Create and run the context
-	ctx := NewExampleContext()
-
-	resultCtx, err := NewDag().Run(ctx)
+	_, data, err := NewDependenciesDag().Run(context.Background(), map[string]any{})
 
 	if err != nil {
 		fmt.Printf("Error running DAG: %v\n", err)
@@ -16,8 +14,8 @@ func main() {
 	}
 
 	// Access values from the context
-	finalPrice := resultCtx.(*ExampleContext).finalPrice
-	stepsCompleted := resultCtx.(*ExampleContext).stepsCompleted
+	finalPrice := data["finalPrice"]
+	stepsCompleted := data["stepsCompleted"]
 
 	fmt.Printf("Final price: %d\n", finalPrice)
 	fmt.Printf("Steps completed: %v\n", stepsCompleted)

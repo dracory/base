@@ -64,3 +64,19 @@ type DagInterface interface {
 	// The actual dependencies may vary based on the context and any conditional dependencies.
 	DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface
 }
+
+// PipelineInterface represents a sequence of runnable nodes
+// that will be executed in the sequence they are added.
+type PipelineInterface interface {
+	RunnableInterface
+
+	// RunnableAdd adds a runnable node(s) to the pipeline.
+	RunnableAdd(node ...RunnableInterface)
+
+	// RunnableRemove removes a runnable node from the pipeline.
+	RunnableRemove(node RunnableInterface) bool
+
+	// RunnableList returns all runnable nodes in the pipeline.
+	// The order of nodes in the returned slice is the order they were added.
+	RunnableList() []RunnableInterface
+}
