@@ -1,125 +1,84 @@
 package main
 
 import (
-	"github.com/dracory/base/object"
+	"fmt"
+
 	"github.com/dracory/base/steps"
 )
 
 // OrderContext implements StepContextInterface
 type OrderContext struct {
-	*object.SerializablePropertyObject
-	stepsExecuted []string
+	steps.StepContextInterface
 }
 
 // NewOrderContext creates a new OrderContext
-func NewOrderContext(orderType string) *OrderContext {
+func NewOrderContext(orderType string, totalAmount float64) steps.StepContextInterface {
+	stepContext := steps.NewStepContext()
 	ctx := &OrderContext{
-		SerializablePropertyObject: object.NewSerializablePropertyObject().(*object.SerializablePropertyObject),
+		StepContextInterface: stepContext,
 	}
 	ctx.Set("orderType", orderType)
-	ctx.Set("totalAmount", 100.0)
-	ctx.Set("stepsToSkip", map[string]bool{})
+	ctx.Set("totalAmount", totalAmount)
+	ctx.Set("stepsExecuted", []string{})
 	return ctx
-}
-
-// Name returns the context name
-func (c *OrderContext) Name() string {
-	return c.Get("name").(string)
-}
-
-// SetName sets the context name
-func (c *OrderContext) SetName(name string) steps.StepContextInterface {
-	c.Set("name", name)
-	return c
 }
 
 // NewStepProcessOrder creates a step that processes the order
 func NewStepProcessOrder() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		ctx.(*OrderContext).stepsExecuted = append(ctx.(*OrderContext).stepsExecuted, "ProcessOrder")
-		return nil
-	})
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if ctx == nil {
+			return ctx, fmt.Errorf("context is nil")
+		}
+		stepsExecuted := ctx.Get("stepsExecuted").([]string)
+		ctx.Set("stepsExecuted", append(stepsExecuted, "ProcessOrder"))
+		return ctx, nil
+	}).SetName("ProcessOrder")
 }
 
 // NewStepApplyDiscount creates a step that applies a discount
 func NewStepApplyDiscount() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		orderCtx := ctx.(*OrderContext)
-		totalAmount := orderCtx.Get("totalAmount").(float64)
-		orderCtx.Set("totalAmount", totalAmount*0.9) // 10% discount
-		orderCtx.stepsExecuted = append(orderCtx.stepsExecuted, "ApplyDiscount")
-		return nil
-	})
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if ctx == nil {
+			return ctx, fmt.Errorf("context is nil")
+		}
+		totalAmount := ctx.Get("totalAmount").(float64)
+		ctx.Set("totalAmount", totalAmount*0.9) // 10% discount
+		stepsExecuted := ctx.Get("stepsExecuted").([]string)
+		ctx.Set("stepsExecuted", append(stepsExecuted, "ApplyDiscount"))
+		return ctx, nil
+	}).SetName("ApplyDiscount")
 }
 
 // NewStepAddShipping creates a step that adds shipping cost
 func NewStepAddShipping() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		orderCtx := ctx.(*OrderContext)
-		stepsToSkip := orderCtx.Get("stepsToSkip")
-		skipShipping := false
-		if stepsToSkip != nil {
-			if skip, ok := stepsToSkip.(map[string]bool)["addShipping"]; ok {
-				skipShipping = skip
-			}
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if ctx == nil {
+			return ctx, fmt.Errorf("context is nil")
 		}
-		if !skipShipping {
-			totalAmount := orderCtx.Get("totalAmount").(float64)
-			orderCtx.Set("totalAmount", totalAmount+5.0) // Fixed shipping cost
-			orderCtx.stepsExecuted = append(orderCtx.stepsExecuted, "AddShipping")
-		}
-		return nil
-	})
+		totalAmount := ctx.Get("totalAmount").(float64)
+		ctx.Set("totalAmount", totalAmount+5.0) // Fixed shipping cost
+		stepsExecuted := ctx.Get("stepsExecuted").([]string)
+		ctx.Set("stepsExecuted", append(stepsExecuted, "AddShipping"))
+		return ctx, nil
+	}).SetName("AddShipping")
 }
 
 // NewStepCalculateTax creates a step that calculates tax
 func NewStepCalculateTax() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		orderCtx := ctx.(*OrderContext)
-		stepsToSkip := orderCtx.Get("stepsToSkip")
-		skipTax := false
-		if stepsToSkip != nil {
-			if skip, ok := stepsToSkip.(map[string]bool)["calculateTax"]; ok {
-				skipTax = skip
-			}
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if ctx == nil {
+			return ctx, fmt.Errorf("context is nil")
 		}
-		if !skipTax {
-			totalAmount := orderCtx.Get("totalAmount").(float64)
-			orderCtx.Set("totalAmount", totalAmount*1.2) // 20% tax
-			orderCtx.stepsExecuted = append(orderCtx.stepsExecuted, "CalculateTax")
-		}
-		return nil
-	})
-}
-
-// NewStepDetermineSkip creates a step that determines which steps to skip
-func NewStepDetermineSkip() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		orderCtx := ctx.(*OrderContext)
-		orderType := orderCtx.Get("orderType").(string)
-		stepsToSkip := orderCtx.Get("stepsToSkip")
-		if stepsToSkip == nil {
-			stepsToSkip = map[string]bool{}
-			orderCtx.Set("stepsToSkip", stepsToSkip)
-		}
-		
-		// Skip shipping for digital and subscription orders
-		if orderType == "digital" || orderType == "subscription" {
-			stepsToSkip.(map[string]bool)["addShipping"] = true
-		}
-		
-		// Skip tax for subscription orders
-		if orderType == "subscription" {
-			stepsToSkip.(map[string]bool)["calculateTax"] = true
-		}
-		
-		orderCtx.stepsExecuted = append(orderCtx.stepsExecuted, "DetermineSkip")
-		return nil
-	})
+		totalAmount := ctx.Get("totalAmount").(float64)
+		ctx.Set("totalAmount", totalAmount*1.2) // 20% tax
+		stepsExecuted := ctx.Get("stepsExecuted").([]string)
+		ctx.Set("stepsExecuted", append(stepsExecuted, "CalculateTax"))
+		return ctx, nil
+	}).SetName("CalculateTax")
 }
 
 // NewDag creates a DAG with conditional logic
-func NewDag(orderType string) (steps.DagInterface, error) {
+func NewDag(orderType string, totalAmount float64) (steps.DagInterface, error) {
 	dag := steps.NewDag()
 
 	// Create steps
@@ -127,46 +86,45 @@ func NewDag(orderType string) (steps.DagInterface, error) {
 	applyDiscount := NewStepApplyDiscount()
 	addShipping := NewStepAddShipping()
 	calculateTax := NewStepCalculateTax()
-	determineSkip := NewStepDetermineSkip()
-
-	// Set up dependencies
-	applyDiscount.AddDependency(processOrder)
-	determineSkip.AddDependency(applyDiscount)
-	addShipping.AddDependency(determineSkip)
-	calculateTax.AddDependency(determineSkip)
 
 	// Add steps to DAG
 	dag.AddStep(processOrder)
 	dag.AddStep(applyDiscount)
-	dag.AddStep(determineSkip)
 	dag.AddStep(addShipping)
 	dag.AddStep(calculateTax)
+
+	// Set up dependencies
+	dag.AddDependency(applyDiscount, processOrder)
+	dag.AddDependencyIf(addShipping, applyDiscount, func(ctx steps.StepContextInterface) bool {
+		if ctx == nil {
+			return false
+		}
+		orderType, ok := ctx.Get("orderType").(string)
+		if !ok {
+			return false
+		}
+		return orderType != "digital" && orderType != "subscription"
+	})
+
+	dag.AddDependencyIf(calculateTax, addShipping, func(ctx steps.StepContextInterface) bool {
+		if ctx == nil {
+			return false
+		}
+		orderType, ok := ctx.Get("orderType").(string)
+		if !ok {
+			return false
+		}
+		return orderType != "subscription"
+	})
 
 	return dag, nil
 }
 
 // NewConditionalDag creates a DAG with conditional logic
-func NewConditionalDag(orderType string) steps.DagInterface {
-	dag, err := NewDag(orderType)
+func NewConditionalDag(orderType string, totalAmount float64) steps.DagInterface {
+	dag, err := NewDag(orderType, totalAmount)
 	if err != nil {
 		panic(err)
-	}
-
-	// Set step names for identification
-	steps := dag.GetSteps()
-	for _, step := range steps {
-		switch step.GetID() {
-		case steps[0].GetID():
-			step.SetName("processOrder")
-		case steps[1].GetID():
-			step.SetName("applyDiscount")
-		case steps[2].GetID():
-			step.SetName("determineSkip")
-		case steps[3].GetID():
-			step.SetName("addShipping")
-		case steps[4].GetID():
-			step.SetName("calculateTax")
-		}
 	}
 	return dag
 }

@@ -7,12 +7,18 @@ import (
 func main() {
 	// Create and run the context
 	ctx := NewExampleContext()
-	dag := NewDag()
-	if err := dag.Run(ctx); err != nil {
+
+	resultCtx, err := NewDag().Run(ctx)
+
+	if err != nil {
 		fmt.Printf("Error running DAG: %v\n", err)
 		return
 	}
 
-	fmt.Printf("Final price: %d\n", ctx.finalPrice)
-	fmt.Printf("Steps completed: %v\n", ctx.stepsCompleted)
+	// Access values from the context
+	finalPrice := resultCtx.(*ExampleContext).finalPrice
+	stepsCompleted := resultCtx.(*ExampleContext).stepsCompleted
+
+	fmt.Printf("Final price: %d\n", finalPrice)
+	fmt.Printf("Steps completed: %v\n", stepsCompleted)
 }

@@ -1,37 +1,56 @@
 package main
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/dracory/base/steps"
 )
 
 func TestDependencies(t *testing.T) {
-	// Create and run the context
-	dag := NewDag()
-	ctx := NewExampleContext()
-	if err := dag.Run(ctx); err != nil {
-		t.Fatal(err)
+	// Create steps
+	step1 := steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		ctx.Set("value", 1)
+		return ctx, nil
+	})
+
+	step2 := steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if !ctx.Has("value") {
+			return ctx, fmt.Errorf("value not found")
+		}
+		value := ctx.Get("value").(int)
+		ctx.Set("value", value*2)
+		return ctx, nil
+	})
+
+	step3 := steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if !ctx.Has("value") {
+			return ctx, fmt.Errorf("value not found")
+		}
+		value := ctx.Get("value").(int)
+		ctx.Set("value", value*3)
+		return ctx, nil
+	})
+
+	// Create a DAG and add dependencies
+	dag := steps.NewDag()
+	dag.AddStep(step1)
+	dag.AddStep(step2)
+	dag.AddStep(step3)
+	dag.AddDependency(step2, step1)
+	dag.AddDependency(step3, step2)
+
+	// Run the DAG
+	ctx := steps.NewStepContext()
+	ctx, err := dag.Run(ctx)
+	if err != nil {
+		t.Errorf("Error running DAG: %v", err)
+		return
 	}
 
-	// Verify final price calculation
-	// Base price: 100
-	// After 20% discount: 80
-	// Add shipping: 90
-	// Add 20% tax: 108
-	if ctx.finalPrice != 108 {
-		t.Fatalf("expected final price 108, got: %d", ctx.finalPrice)
-	}
-
-	// Verify steps completed in correct order
-	if len(ctx.stepsCompleted) != 4 ||
-		ctx.stepsCompleted[0] != "SetBasePrice" ||
-		ctx.stepsCompleted[1] != "ApplyDiscount" ||
-		ctx.stepsCompleted[2] != "AddShipping" ||
-		ctx.stepsCompleted[3] != "CalculateTax" {
-		t.Fatalf("steps completed in wrong order: %v", ctx.stepsCompleted)
-	}
-
-	// Verify base price is set correctly
-	if ctx.basePrice != 100 {
-		t.Fatalf("expected base price 100, got: %d", ctx.basePrice)
+	// Verify the value
+	value := ctx.Get("value")
+	if value != 6 {
+		t.Errorf("Expected value 6, got %v", value)
 	}
 }

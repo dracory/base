@@ -1,91 +1,66 @@
 package steps
 
 import (
-	"github.com/dracory/base/object"
+	"context"
 )
 
-// StepContextInterface represents the context in which steps are executed.
-// It must implement DataObjectInterface to provide data access capabilities.
-type StepContextInterface interface {
-	object.SerializablePropertyObjectInterface
-	
-	// Name returns the name of the context
-	Name() string
-	
-	// SetName sets the name of the context
-	SetName(name string) StepContextInterface
+type StepHandler func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error)
+
+// RunnableInterface represents a single unit of work, that can be executed
+// within a given context, and specified data. It can work wuth the data
+// and return the result of the work.
+//
+// It can be used as a single step, or combined with other nodes to form
+// a Pipeline, Workflow or DAG.
+type RunnableInterface interface {
+	GetID() string
+	SetID(id string)
+	GetName() string
+	SetName(name string)
+	Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error)
 }
 
-// StepInterface represents a single node in a DAG.
+// StepInterface represents a single node in a Pipeline, Workflow or DAG.
 // A step is a unit of work that can be executed within a given context.
-// Steps can have dependencies on other steps and maintain their own execution logic.
+// A step is executed by a Pipeline, Workflow or DAG which manages
+// its dependencies and execution order.
 type StepInterface interface {
-	object.SerializablePropertyObjectInterface
+	RunnableInterface
 
-	// GetExecute returns the function that implements the step's execution logic.
-	// This function takes a StepContextInterface and returns an error if the step fails.
-	GetExecute() func(ctx StepContextInterface) error
+	// GetHandler returns the function that implements the step's execution logic.
+	GetHandler() StepHandler
 
-	// SetExecute allows setting or modifying the step's execution logic.
-	// Returns the step itself to support method chaining.
-	SetExecute(fn func(ctx StepContextInterface) error) StepInterface
-
-	// AddDependency adds a single dependency on another step.
-	// A step will only execute after all its dependencies have completed successfully.
-	// Returns the step itself to support method chaining.
-	AddDependency(step StepInterface) StepInterface
-
-	// AddDependencies adds multiple dependencies at once.
-	// This is more efficient than calling AddDependency multiple times.
-	// Returns the step itself to support method chaining.
-	AddDependencies(steps ...StepInterface) StepInterface
-
-	// AddDependencyIf adds a dependency that only exists if the condition is true.
-	// Returns the step itself to support method chaining.
-	AddDependencyIf(step StepInterface, condition func(ctx StepContextInterface) bool) StepInterface
-
-	// GetDependencies returns a list of all steps that this step depends on.
-	// The actual dependencies may vary based on the context and any conditional dependencies.
-	GetDependencies(ctx StepContextInterface) []StepInterface
-
-	// Run executes the step's logic within the given context.
-	// Returns an error if the step fails to execute.
-	Run(ctx StepContextInterface) error
-
-	// Name returns the name of the step.
-	// This is used for identifying steps in the DAG.
-	Name() string
-
-	// SetName sets the name of the step.
-	// Returns the step itself to support method chaining.
-	SetName(name string) StepInterface
+	// SetHandler allows setting or modifying the step's execution logic.
+	SetHandler(handler StepHandler)
 }
 
 // DagInterface represents a Directed Acyclic Graph (DAG) of steps that can be executed in a specific order.
 // It manages the dependencies between steps and ensures they are executed in the correct sequence.
 type DagInterface interface {
-	object.SerializablePropertyObjectInterface
+	RunnableInterface
 
-	// AddStep adds a single step to the DAG.
-	// Steps can be added in any order, as their execution order will be determined by their dependencies.
-	AddStep(step StepInterface)
+	// RunnableAdd adds a single node to the DAG.
+	// Runnable nodes can be added in any order, as their execution order will be determined by their dependencies.
+	RunnableAdd(node ...RunnableInterface)
 
-	// AddSteps adds multiple steps to the DAG at once.
-	// This is more efficient than calling AddStep multiple times.
-	// Steps can be added in any order, as their execution order will be determined by their dependencies.
-	AddSteps(steps ...StepInterface)
+	// RunnableRemove removes a node from the DAG.
+	// Returns true if the node was found and removed, false if it wasn't found.
+	RunnableRemove(node RunnableInterface) bool
 
-	// RemoveStep removes a step from the DAG.
-	// Returns true if the step was found and removed, false if it wasn't found.
-	RemoveStep(step StepInterface) bool
+	// RunnableList returns all runnable nodes in the DAG.
+	// The order of nodes in the returned slice is not guaranteed to be their execution order.
+	// Use Run() to execute nodes in the correct order based on their dependencies.
+	RunnableList() []RunnableInterface
 
-	// GetSteps returns all steps in the DAG.
-	// The order of steps in the returned slice is not guaranteed to be their execution order.
-	// Use Run() to execute steps in the correct order based on their dependencies.
-	GetSteps() []StepInterface
+	// DependencyAdd adds a dependency between two nodes.
+	// The dependent node will only execute after the dependency node has completed successfully.
+	DependencyAdd(dependent RunnableInterface, dependency ...RunnableInterface)
 
-	// Run executes all steps in the DAG within the given context.
-	// Steps are executed in topological order based on their dependencies.
-	// If any step fails, the execution stops and the error is returned.
-	Run(ctx StepContextInterface) error
+	// DependencyAddIf adds a conditional dependency between nodes.
+	// The dependency will only exist if the condition function returns true.
+	DependencyAddIf(dependent RunnableInterface, dependency RunnableInterface, condition func(context.Context, map[string]any) bool)
+
+	// DependencyList returns all dependencies for a given node.
+	// The actual dependencies may vary based on the context and any conditional dependencies.
+	DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface
 }

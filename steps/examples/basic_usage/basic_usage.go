@@ -28,21 +28,26 @@ func (c *ExampleContext) SetName(name string) steps.StepContextInterface {
 
 // NewIncrementStep creates a new step that increments a value
 func NewIncrementStep() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
 		value := ctx.Get("value").(int)
 		value++
 		ctx.Set("value", value)
-		return nil
+		return ctx, nil
 	})
 }
 
-// NewDag creates a new DAG with 5 increment steps
-func NewDag() steps.DagInterface {
+// NewSetValueStep creates a new step that sets a value
+func NewSetValueStep() steps.StepInterface {
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		ctx.Set("value", 42)
+		return ctx, nil
+	})
+}
+
+// NewExampleDag creates a DAG with the increment step
+func NewExampleDag() steps.DagInterface {
 	dag := steps.NewDag()
-	dag.AddStep(NewIncrementStep())
-	dag.AddStep(NewIncrementStep())
-	dag.AddStep(NewIncrementStep())
-	dag.AddStep(NewIncrementStep())
+	dag.AddStep(NewSetValueStep())
 	dag.AddStep(NewIncrementStep())
 	return dag
 }

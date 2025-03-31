@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/dracory/base/object"
 	"github.com/dracory/base/steps"
 )
 
 // ExampleContext implements StepContextInterface
 type ExampleContext struct {
-	*object.SerializablePropertyObject
+	steps.StepContextInterface
 	value          int
 	stepsCompleted []string
 	errorCount     int
@@ -35,36 +34,34 @@ func (c *ExampleContext) SetName(name string) steps.StepContextInterface {
 // NewExampleContext creates a new ExampleContext
 func NewExampleContext() *ExampleContext {
 	return &ExampleContext{
-		SerializablePropertyObject: object.NewSerializablePropertyObject().(*object.SerializablePropertyObject),
+		StepContextInterface: steps.NewStepContext(),
 	}
 }
 
 // NewStepSetInitialValue creates a step that sets an initial value
 func NewStepSetInitialValue() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		ctx.(*ExampleContext).value = 100
-		ctx.(*ExampleContext).stepsCompleted = append(ctx.(*ExampleContext).stepsCompleted, "SetInitialValue")
-		return nil
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		ctx.Set("value", 1)
+		return ctx, nil
 	})
 }
 
 // NewStepProcessData creates a step that processes data
 func NewStepProcessData() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		ctx.(*ExampleContext).value *= 2
-		ctx.(*ExampleContext).stepsCompleted = append(ctx.(*ExampleContext).stepsCompleted, "ProcessData")
-		return nil
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		if !ctx.Has("value") {
+			return ctx, fmt.Errorf("value not found")
+		}
+		value := ctx.Get("value").(int)
+		ctx.Set("value", value*2)
+		return ctx, nil
 	})
 }
 
 // NewStepVerifyData creates a step that verifies data
 func NewStepVerifyData() steps.StepInterface {
-	return steps.NewStep(func(ctx steps.StepContextInterface) error {
-		ctx.(*ExampleContext).stepsCompleted = append(ctx.(*ExampleContext).stepsCompleted, "VerifyData")
-
-		// Simulate an error
-		ctx.(*ExampleContext).errorCount++
-		return fmt.Errorf("data verification failed")
+	return steps.NewStep(func(ctx steps.StepContextInterface) (steps.StepContextInterface, error) {
+		return ctx, fmt.Errorf("intentional error")
 	})
 }
 
@@ -72,13 +69,16 @@ func NewStepVerifyData() steps.StepInterface {
 func NewDag() steps.DagInterface {
 	dag := steps.NewDag()
 
-	stepSetInitialValue := NewStepSetInitialValue()
-	stepProcessData := NewStepProcessData().AddDependency(stepSetInitialValue)
-	stepVerifyData := NewStepVerifyData().AddDependency(stepProcessData)
+	step1 := NewStepSetInitialValue()
+	step2 := NewStepProcessData()
+	stepWithError := NewStepVerifyData()
 
-	dag.AddStep(stepSetInitialValue)
-	dag.AddStep(stepProcessData)
-	dag.AddStep(stepVerifyData)
+	dag.AddStep(step1)
+	dag.AddStep(step2)
+	dag.AddStep(stepWithError)
+
+	dag.AddDependency(step2, step1)
+	dag.AddDependency(stepWithError, step2)
 
 	return dag
 }

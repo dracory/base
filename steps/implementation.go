@@ -1,262 +1,333 @@
 package steps
 
 import (
+	"context"
 	"fmt"
+	"sort"
 
-	"github.com/dracory/base/object"
+	"github.com/gouniverse/uid"
 )
 
-type StepContext struct {
-	*object.SerializablePropertyObject
-}
-
-// NewStepContext creates a new step context
-func NewStepContext() StepContextInterface {
-	return &StepContext{
-		SerializablePropertyObject: object.NewSerializablePropertyObject().(*object.SerializablePropertyObject),
-	}
-}
-
-// Name returns the name of the context
-func (s *StepContext) Name() string {
-	return s.Get("name").(string)
-}
-
-// SetName sets the name of the context
-func (s *StepContext) SetName(name string) StepContextInterface {
-	s.Set("name", name)
-	return s
-}
-
-// Step implements the StepInterface using a serializable property object
-// for better identification and serialization capabilities.
 type Step struct {
-	*object.SerializablePropertyObject
-	execute      func(ctx StepContextInterface) error
-	dependencies []StepInterface
-	conditionalDependencies []struct {
-		step      StepInterface
-		condition func(ctx StepContextInterface) bool
-	}
-	skipStep func(ctx StepContextInterface) bool
+	id      string
+	name    string
+	data    map[string]any
+	handler StepHandler
 }
 
 // NewStep creates a new step with the given execution function and optional ID.
-func NewStep(fn func(ctx StepContextInterface) error, id ...string) StepInterface {
+func NewStep() StepInterface {
 	step := &Step{
-		SerializablePropertyObject: object.NewSerializablePropertyObject().(*object.SerializablePropertyObject),
-		execute:                    fn,
+		data: make(map[string]any),
 	}
-	if len(id) > 0 && id[0] != "" {
-		step.SetID(id[0])
-	}
+
+	step.SetID(uid.HumanUid())
+	step.SetName("")
+
 	return step
 }
 
-func (s *Step) Name() string {
-	return s.Get("name").(string)
+func (s *Step) GetID() string {
+	return s.id
 }
 
-func (s *Step) SetName(name string) StepInterface {
-	s.Set("name", name)
-	return s
+func (s *Step) SetID(id string) {
+	s.id = id
 }
 
-// GetExecute returns the step's execution function
-func (s *Step) GetExecute() func(ctx StepContextInterface) error {
-	return s.execute
+func (s *Step) GetName() string {
+	return s.name
 }
 
-// SetExecute sets the step's execution function
-func (s *Step) SetExecute(fn func(ctx StepContextInterface) error) StepInterface {
-	s.execute = fn
-	return s
+func (s *Step) SetName(name string) {
+	s.name = name
 }
 
-// AddDependency adds a dependency to the step
-func (s *Step) AddDependency(step StepInterface) StepInterface {
-	s.dependencies = append(s.dependencies, step)
-	return s
+// GetHandler returns the step's execution function
+func (s *Step) GetHandler() StepHandler {
+	return s.handler
 }
 
-// AddDependencies adds multiple dependencies to the step
-func (s *Step) AddDependencies(steps ...StepInterface) StepInterface {
-	s.dependencies = append(s.dependencies, steps...)
-	return s
-}
-
-// AddDependencyIf adds a dependency that only exists if the condition is true.
-func (s *Step) AddDependencyIf(step StepInterface, condition func(ctx StepContextInterface) bool) StepInterface {
-	s.conditionalDependencies = append(s.conditionalDependencies, struct {
-		step      StepInterface
-		condition func(ctx StepContextInterface) bool
-	}{
-		step:      step,
-		condition: condition,
-	})
-	return s
-}
-
-// GetDependencies returns all active dependencies based on context.
-func (s *Step) GetDependencies(ctx StepContextInterface) []StepInterface {
-	var activeDependencies []StepInterface
-	
-	// Add regular dependencies
-	activeDependencies = append(activeDependencies, s.dependencies...)
-	
-	// Add conditional dependencies that match the condition
-	for _, dep := range s.conditionalDependencies {
-		if dep.condition(ctx) {
-			activeDependencies = append(activeDependencies, dep.step)
-		}
-	}
-	
-	return activeDependencies
-}
-
-// SetSkipStep sets the skip condition for the step
-func (s *Step) SetSkipStep(fn func(ctx StepContextInterface) bool) StepInterface {
-	s.skipStep = fn
-	return s
-}
-
-// SkipStep returns true if the step should be skipped
-func (s *Step) SkipStep(ctx StepContextInterface) bool {
-	if s.skipStep != nil {
-		return s.skipStep(ctx)
-	}
-	return false
+// SetHandler sets the step's execution function
+func (s *Step) SetHandler(fn StepHandler) {
+	s.handler = fn
 }
 
 // Run executes the step's function with the given context
-func (s *Step) Run(ctx StepContextInterface) error {
-	if s.SkipStep(ctx) {
-		return nil
-	}
-	return s.execute(ctx)
-}
-
-// ToJSON serializes the step to JSON
-func (s *Step) ToJSON() ([]byte, error) {
-	return s.SerializablePropertyObject.ToJSON()
-}
-
-// FromJSON deserializes JSON data into the step
-func (s *Step) FromJSON(data []byte) error {
-	return s.SerializablePropertyObject.FromJSON(data)
+func (s *Step) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+	return s.handler(ctx, data)
 }
 
 type Dag struct {
-	*object.SerializablePropertyObject
-	steps   []StepInterface
-	stepMap map[StepInterface]struct{}
+	// id of the dag
+	id string
+
+	// name of the dag
+	name string
+
+	// runnable sequence (IDs)
+	runnableSequence []string
+
+	// runnables (ID, RunnableInterface)
+	runnables map[string]RunnableInterface
+
+	// dependencies (DependentID, DependencyIDs []string)
+	dependencies map[string][]string
 }
 
 // NewDag creates a new DAG
 func NewDag() DagInterface {
-	return &Dag{
-		SerializablePropertyObject: object.NewSerializablePropertyObject().(*object.SerializablePropertyObject),
-		steps:                      []StepInterface{},
-		stepMap:                    make(map[StepInterface]struct{}),
-	}
+	dag := &Dag{}
+	dag.SetName("New DAG")
+	dag.id = uid.HumanUid()
+	dag.runnables = make(map[string]RunnableInterface)
+	dag.dependencies = make(map[string][]string)
+	return dag
 }
 
-func (d *Dag) AddStep(step StepInterface) {
-	if _, exists := d.stepMap[step]; !exists {
-		d.steps = append(d.steps, step)
-		d.stepMap[step] = struct{}{}
-	}
+func (d *Dag) GetID() string {
+	return d.id
 }
 
-func (d *Dag) AddSteps(steps ...StepInterface) {
-	for _, step := range steps {
-		if _, exists := d.stepMap[step]; !exists {
-			d.steps = append(d.steps, step)
-			d.stepMap[step] = struct{}{}
+func (d *Dag) SetID(id string) {
+	d.id = id
+}
+
+func (d *Dag) GetName() string {
+	return d.name
+}
+
+func (d *Dag) SetName(name string) {
+	d.name = name
+}
+
+// RunnableAdd adds a single node to the DAG.
+func (d *Dag) RunnableAdd(node ...RunnableInterface) {
+	for _, n := range node {
+		if n == nil {
+			continue
+		}
+		id := n.GetID()
+		if id == "" {
+			id = uid.HumanUid()
+			n.SetID(id)
+		}
+
+		// Check for duplicate ID
+		if _, exists := d.runnables[id]; exists {
+			// Generate a new ID if there's a conflict
+			newID := uid.HumanUid()
+			n.SetID(newID)
+			id = newID
+		}
+
+		d.runnables[id] = n
+		if !contains(d.runnableSequence, id) {
+			d.runnableSequence = append(d.runnableSequence, id)
 		}
 	}
 }
 
-func (d *Dag) RemoveStep(step StepInterface) bool {
-	if _, exists := d.stepMap[step]; !exists {
+// RunnableRemove removes a node from the DAG.
+func (d *Dag) RunnableRemove(node RunnableInterface) bool {
+	id := node.GetID()
+	if id == "" {
 		return false
 	}
 
-	delete(d.stepMap, step)
+	if _, exists := d.runnables[id]; !exists {
+		return false
+	}
 
-	for i := 0; i < len(d.steps); i++ {
-		if d.steps[i] == step {
-			d.steps = append(d.steps[:i], d.steps[i+1:]...)
+	// Remove from runnables
+	delete(d.runnables, id)
+
+	// Remove from runnableSequence
+	for i, seqID := range d.runnableSequence {
+		if seqID == id {
+			d.runnableSequence = append(d.runnableSequence[:i], d.runnableSequence[i+1:]...)
 			break
+		}
+	}
+
+	// Remove dependencies
+	delete(d.dependencies, id)
+
+	// Remove this node from other nodes' dependencies
+	for depID, depList := range d.dependencies {
+		for i, dep := range depList {
+			if dep == id {
+				d.dependencies[depID] = append(depList[:i], depList[i+1:]...)
+				break
+			}
 		}
 	}
 
 	return true
 }
 
-func (d *Dag) GetSteps() []StepInterface {
-	return d.steps
+// RunnableList returns all runnable nodes in the DAG.
+func (d *Dag) RunnableList() []RunnableInterface {
+	result := make([]RunnableInterface, 0, len(d.runnables))
+	for _, node := range d.runnables {
+		result = append(result, node)
+	}
+	return result
 }
 
-func (d *Dag) Run(ctx StepContextInterface) error {
-	graph := d.buildDependencyGraph()
-	sortedSteps, err := d.topologicalSort(graph)
+// Run executes all nodes in the DAG in the correct order.
+func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+	ordered, err := d.topologicalSort(d.buildDependencyGraph(ctx, data))
 	if err != nil {
-		return err
+		return ctx, data, fmt.Errorf("failed to sort DAG: %w", err)
 	}
 
-	return d.executeSteps(sortedSteps, ctx)
+	for _, runner := range ordered {
+		ctx, data, err = runner.Run(ctx, data)
+		if err != nil {
+			return ctx, data, fmt.Errorf("failed to run step %s: %w", runner.GetID(), err)
+		}
+	}
+
+	return ctx, data, nil
 }
 
-func (d *Dag) executeSteps(steps []StepInterface, ctx StepContextInterface) error {
-	for _, step := range steps {
-		if err := step.Run(ctx); err != nil {
-			return err
+// DependencyAdd adds a dependency between two nodes.
+func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableInterface) {
+	depID := dependent.GetID()
+	if depID == "" {
+		return
+	}
+
+	if _, exists := d.dependencies[depID]; !exists {
+		d.dependencies[depID] = make([]string, 0)
+	}
+
+	for _, dep := range dependency {
+		depNodeID := dep.GetID()
+		if depNodeID == "" {
+			continue
 		}
+
+		if !contains(d.dependencies[depID], depNodeID) {
+			d.dependencies[depID] = append(d.dependencies[depID], depNodeID)
+		}
+	}
+}
+
+func (d *Dag) getCtxAndData() (context.Context, map[string]any) {
+	return context.Background(), make(map[string]any)
+}
+
+func (d *Dag) DependencyAddIf(dependent RunnableInterface, dependency RunnableInterface, condition func(context.Context, map[string]any) bool) {
+	depID := dependent.GetID()
+	depNodeID := dependency.GetID()
+	if depID == "" || depNodeID == "" {
+		return
+	}
+
+	ctx, data := d.getCtxAndData()
+
+	if condition != nil && condition(ctx, data) {
+		if _, exists := d.dependencies[depID]; !exists {
+			d.dependencies[depID] = make([]string, 0)
+		}
+
+		if !contains(d.dependencies[depID], depNodeID) {
+			d.dependencies[depID] = append(d.dependencies[depID], depNodeID)
+		}
+	}
+}
+
+// DependencyList returns all dependencies for a given node.
+func (d *Dag) DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface {
+	id := node.GetID()
+	if id == "" {
+		return nil
+	}
+
+	if deps, ok := d.dependencies[id]; ok {
+		result := make([]RunnableInterface, 0, len(deps))
+		for _, depID := range deps {
+			if depNode, ok := d.runnables[depID]; ok {
+				result = append(result, depNode)
+			}
+		}
+		return result
 	}
 	return nil
 }
 
-// buildDependencyGraph builds a graph of step dependencies
-func (d *Dag) buildDependencyGraph() map[StepInterface][]StepInterface {
-	graph := make(map[StepInterface][]StepInterface)
-	ctx := NewStepContext()
-	for _, step := range d.steps {
-		graph[step] = step.GetDependencies(ctx)
+func contains(slice []string, value string) bool {
+	for _, item := range slice {
+		if item == value {
+			return true
+		}
+	}
+	return false
+}
+
+// buildDependencyGraph builds a graph of runner dependencies
+func (d *Dag) buildDependencyGraph(ctx context.Context, data map[string]any) map[RunnableInterface][]RunnableInterface {
+	graph := make(map[RunnableInterface][]RunnableInterface)
+	for _, runner := range d.runnables {
+		graph[runner] = make([]RunnableInterface, 0)
+		if deps, ok := d.dependencies[runner.GetID()]; ok {
+			for _, depID := range deps {
+				if depNode, ok := d.runnables[depID]; ok {
+					graph[runner] = append(graph[runner], depNode)
+				}
+			}
+		}
 	}
 	return graph
 }
 
-func (d *Dag) topologicalSort(graph map[StepInterface][]StepInterface) ([]StepInterface, error) {
-	var sortedSteps []StepInterface
-	visited := make(map[StepInterface]string)
+// topologicalSort performs a topological sort on the dependency graph
+func (d *Dag) topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]RunnableInterface, error) {
+	var result []RunnableInterface
+	visited := make(map[RunnableInterface]bool)
+	tempMark := make(map[RunnableInterface]bool)
 
-	var visit func(step StepInterface) error
-	visit = func(step StepInterface) error {
-		if visited[step] == "visiting" {
-			return fmt.Errorf("cycle detected in DAG")
+	var visit func(node RunnableInterface) error
+	visit = func(node RunnableInterface) error {
+		if tempMark[node] {
+			return fmt.Errorf("cycle detected")
 		}
-		if visited[step] == "visited" {
+		if visited[node] {
 			return nil
 		}
 
-		visited[step] = "visiting"
-		for _, dep := range graph[step] {
-			if err := visit(dep); err != nil {
+		tempMark[node] = true
+		for _, neighbor := range graph[node] {
+			if err := visit(neighbor); err != nil {
 				return err
 			}
 		}
 
-		visited[step] = "visited"
-		sortedSteps = append(sortedSteps, step)
+		tempMark[node] = false
+		visited[node] = true
+		result = append(result, node)
 		return nil
 	}
 
-	for _, step := range d.steps {
-		if err := visit(step); err != nil {
+	// Sort nodes by their dependencies
+	nodes := make([]RunnableInterface, 0, len(graph))
+	for node := range graph {
+		nodes = append(nodes, node)
+	}
+
+	// Sort nodes by number of dependencies
+	sort.Slice(nodes, func(i, j int) bool {
+		return len(graph[nodes[i]]) < len(graph[nodes[j]])
+	})
+
+	// Visit nodes with fewer dependencies first
+	for _, node := range nodes {
+		if err := visit(node); err != nil {
 			return nil, err
 		}
 	}
 
-	return sortedSteps, nil
+	return result, nil
 }
