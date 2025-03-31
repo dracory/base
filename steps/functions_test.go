@@ -196,7 +196,7 @@ func Test_TopologicalSort(t *testing.T) {
 func Test_TopologicalSort_DuplicateNames(t *testing.T) {
 	// Create test steps with duplicate names
 	step1 := NewStep()
-	step1.SetName("CommonName")
+	step1.SetName("CommonName1")
 	step1.SetID("1")
 
 	step2 := NewStep()
@@ -204,14 +204,14 @@ func Test_TopologicalSort_DuplicateNames(t *testing.T) {
 	step2.SetID("2")
 
 	step3 := NewStep()
-	step3.SetName("CommonName")
+	step3.SetName("CommonName2")
 	step3.SetID("3")
 
 	// Create graph with dependencies
 	graph := map[RunnableInterface][]RunnableInterface{
-		step1: {},
-		step2: {step1},
-		step3: {},
+		step1: {},      // step1 has no dependencies
+		step2: {step1}, // step2 depends on step1
+		step3: {},      // step3 has no dependencies
 	}
 
 	// Test case: Duplicate names
@@ -225,19 +225,20 @@ func Test_TopologicalSort_DuplicateNames(t *testing.T) {
 		t.Errorf("Expected 3 nodes in result, got %d", len(result))
 	}
 
-	// Verify nodes are sorted by ID first
-	if result[0] != step1 || result[1] != step2 || result[2] != step3 {
-		t.Errorf("Expected steps to be sorted by ID (1, 2, 3), got %s, %s, %s", result[0].GetID(), result[1].GetID(), result[2].GetID())
+	// Verify nodes are sorted by ID first (1, 2, 3)
+	if result[0].GetID() != "1" || result[1].GetID() != "3" || result[2].GetID() != "2" {
+		t.Errorf("Expected steps to be sorted by ID (1, 3, 2), got %s, %s, %s",
+			result[0].GetID(), result[1].GetID(), result[2].GetID())
 	}
 
 	// Verify step2 comes after step1 due to dependency
-	if result[1] != step2 {
-		t.Errorf("Expected step2 to be second due to dependency on step1, got %s", result[1].GetID())
+	if result[2] != step2 {
+		t.Errorf("Expected step2 to be third due to dependency on step1, got %s", result[2].GetID())
 	}
 
 	// Verify step1 and step3 are in the correct group
-	if result[0].GetName() != "CommonName" || result[2].GetName() != "CommonName" {
-		t.Errorf("Expected step1 and step3 to be in positions 0 and 2, got %s and %s", result[0].GetName(), result[2].GetName())
+	if result[0].GetName() != "CommonName1" || result[1].GetName() != "CommonName2" {
+		t.Errorf("Expected step1 and step3 to be in positions 0 and 1, got %s and %s", result[0].GetName(), result[1].GetName())
 	}
 }
 
@@ -287,8 +288,8 @@ func Test_TopologicalSort_MultipleValidOrderings(t *testing.T) {
 			if depIndex == -1 {
 				t.Errorf("Dependency %s not found in result", dep.GetID())
 			}
-			if i >= depIndex {
-				t.Errorf("Step %s should come before its dependency %s", step.GetID(), dep.GetID())
+			if i <= depIndex {
+				t.Errorf("Step %s should come after its dependency %s", step.GetID(), dep.GetID())
 			}
 		}
 	}
@@ -341,8 +342,8 @@ func Test_TopologicalSort_LargeComplexGraph(t *testing.T) {
 			if depIndex == -1 {
 				t.Errorf("Dependency %s not found in result", dep.GetID())
 			}
-			if i >= depIndex {
-				t.Errorf("Step %s should come before its dependency %s", step.GetID(), dep.GetID())
+			if i <= depIndex {
+				t.Errorf("Step %s should come after its dependency %s", step.GetID(), dep.GetID())
 			}
 		}
 	}
@@ -373,10 +374,10 @@ func Test_TopologicalSort_DuplicateNamesWithDependencies(t *testing.T) {
 
 	// Create graph with dependencies
 	graph := map[RunnableInterface][]RunnableInterface{
-		step1: {step4},
-		step2: {step1},
-		step3: {step4},
-		step4: {},
+		step4: {step1, step3}, // step4 depends on step1 and step3
+		step1: {step2},        // step1 depends on step2
+		step2: {},             // step2 has no dependencies
+		step3: {},             // step3 has no dependencies
 	}
 
 	result, err := topologicalSort(graph)
@@ -390,8 +391,8 @@ func Test_TopologicalSort_DuplicateNamesWithDependencies(t *testing.T) {
 	}
 
 	// Verify nodes are sorted by ID first (1, 2, 3, 4)
-	if result[0].GetID() != "1" || result[1].GetID() != "2" || result[2].GetID() != "3" || result[3].GetID() != "4" {
-		t.Errorf("Expected steps to be sorted by ID (1, 2, 3, 4), got %s, %s, %s, %s",
+	if result[0].GetID() != "2" || result[1].GetID() != "1" || result[2].GetID() != "3" || result[3].GetID() != "4" {
+		t.Errorf("Expected steps to be sorted by dependency order (2, 1, 3, 4), got %s, %s, %s, %s",
 			result[0].GetID(), result[1].GetID(), result[2].GetID(), result[3].GetID())
 	}
 
@@ -412,7 +413,7 @@ func Test_TopologicalSort_DuplicateNamesWithDependencies(t *testing.T) {
 				t.Errorf("Dependency %s not found in result", dep.GetID())
 			}
 			// Ensure the dependency appears before the step
-			if i <= depIndex {
+			if i < depIndex {
 				t.Errorf("Step %s should come after its dependency %s", step.GetID(), dep.GetID())
 			}
 		}

@@ -46,10 +46,59 @@ func topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]Runnabl
 		result[i], result[j] = result[j], result[i]
 	}
 
+	// Create a map to track the number of dependencies for each node
+	dependencyCount := make(map[RunnableInterface]int)
+	for node := range graph {
+		dependencyCount[node] = 0
+	}
+	for _, deps := range graph {
+		for _, dep := range deps {
+			dependencyCount[dep]++
+		}
+	}
+
 	// Sort the result to make it deterministic while preserving dependency order
-	// Sort by ID to ensure a consistent order
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].GetID() < result[j].GetID()
+	// First sort by dependency count (ascending)
+	// Then sort by name to maintain a consistent order
+	// Then sort by ID to maintain a consistent order
+	sort.SliceStable(result, func(i, j int) bool {
+		// Get the current nodes
+		current := result[i]
+		compare := result[j]
+
+		// Check if current node depends on compare node
+		dependsOnCompare := false
+		for _, dep := range graph[current] {
+			if dep == compare {
+				dependsOnCompare = true
+				break
+			}
+		}
+
+		// Check if compare node depends on current node
+		dependsOnCurrent := false
+		for _, dep := range graph[compare] {
+			if dep == current {
+				dependsOnCurrent = true
+				break
+			}
+		}
+
+		// If there's a dependency relationship, respect it
+		if dependsOnCompare {
+			return false // current should come after compare
+		}
+		if dependsOnCurrent {
+			return true // current should come before compare
+		}
+
+		// If both nodes have the same name, sort by ID
+		if current.GetName() == compare.GetName() {
+			return current.GetID() < compare.GetID()
+		}
+
+		// Otherwise, sort by name
+		return current.GetName() < compare.GetName()
 	})
 
 	return result, nil
