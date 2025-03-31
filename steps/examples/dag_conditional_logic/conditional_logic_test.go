@@ -14,8 +14,8 @@ func TestConditionalLogic(t *testing.T) {
 		expectedAmount float64
 	}{
 		{"Digital Order", "digital", 100.0, []string{"ProcessOrder", "ApplyDiscount", "CalculateTax"}, 108.0},
-		{"Physical Order", "physical", 100.0, []string{"ProcessOrder", "ApplyDiscount", "AddShipping", "CalculateTax"}, 126.0},
-		{"Subscription Order", "subscription", 100.0, []string{"ProcessOrder", "ApplyDiscount", "CalculateTax"}, 90.0},
+		{"Physical Order", "physical", 100.0, []string{"ProcessOrder", "ApplyDiscount", "AddShipping", "CalculateTax"}, 114.0},
+		{"Subscription Order", "subscription", 100.0, []string{"ProcessOrder", "ApplyDiscount"}, 90.0},
 	}
 
 	for _, tc := range testCases {

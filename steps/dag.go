@@ -2,8 +2,6 @@ package steps
 
 import (
 	"context"
-	"errors"
-	"sort"
 
 	"github.com/gouniverse/uid"
 )
@@ -23,6 +21,9 @@ type Dag struct {
 
 	// dependencies (DependentID, DependencyIDs []string)
 	dependencies map[string][]string
+
+	// conditional dependencies (DependentID, DependencyID, Condition func)
+	conditionalDependencies map[string]map[string]func(context.Context, map[string]any) bool
 }
 
 // NewDag creates a new DAG
@@ -32,6 +33,7 @@ func NewDag() DagInterface {
 	dag.id = uid.HumanUid()
 	dag.runnables = make(map[string]RunnableInterface)
 	dag.dependencies = make(map[string][]string)
+	dag.conditionalDependencies = make(map[string]map[string]func(context.Context, map[string]any) bool)
 	return dag
 }
 
@@ -113,6 +115,17 @@ func (d *Dag) RunnableRemove(node RunnableInterface) bool {
 		}
 	}
 
+	// Remove conditional dependencies
+	delete(d.conditionalDependencies, id)
+
+	// Remove this node from other nodes' conditional dependencies
+	for depID, conditions := range d.conditionalDependencies {
+		delete(conditions, id)
+		if len(conditions) == 0 {
+			delete(d.conditionalDependencies, depID)
+		}
+	}
+
 	return true
 }
 
@@ -125,21 +138,66 @@ func (d *Dag) RunnableList() []RunnableInterface {
 	return result
 }
 
-// Run executes all nodes in the DAG in the correct order.
+// Run executes all nodes in the DAG in the correct order
 func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-	ordered, err := d.topologicalSort(d.buildDependencyGraph(ctx, data))
+	// Build dependency graph
+	graph := d.buildDependencyGraph(ctx, data)
+
+	// Get execution order
+	order, err := topologicalSort(graph)
 	if err != nil {
-		return ctx, data, errors.New("topological sort failed:" + err.Error())
+		return ctx, data, err
 	}
 
-	for _, runner := range ordered {
-		ctx, data, err = runner.Run(ctx, data)
+	// Execute steps in order
+	for _, node := range order {
+		ctx, data, err = node.Run(ctx, data)
 		if err != nil {
 			return ctx, data, err
 		}
 	}
 
 	return ctx, data, nil
+}
+
+// buildDependencyGraph builds a graph of runner dependencies
+func (d *Dag) buildDependencyGraph(ctx context.Context, data map[string]any) map[RunnableInterface][]RunnableInterface {
+	graph := make(map[RunnableInterface][]RunnableInterface)
+
+	// Add all nodes
+	for _, node := range d.runnables {
+		graph[node] = make([]RunnableInterface, 0)
+	}
+
+	// Add regular dependencies
+	for depID, depList := range d.dependencies {
+		if node, ok := d.runnables[depID]; ok {
+			for _, dep := range depList {
+				if depNode, ok := d.runnables[dep]; ok {
+					graph[node] = append(graph[node], depNode)
+				}
+			}
+		}
+	}
+
+	// Add conditional dependencies
+	for depID, conditions := range d.conditionalDependencies {
+		if node, ok := d.runnables[depID]; ok {
+			for dep, condition := range conditions {
+				if depNode, ok := d.runnables[dep]; ok {
+					if condition(ctx, data) {
+						graph[node] = append(graph[node], depNode)
+					}
+				}
+			}
+		}
+	}
+
+	return graph
+}
+
+func (d *Dag) getCtxAndData() (context.Context, map[string]any) {
+	return context.Background(), make(map[string]any)
 }
 
 // DependencyAdd adds a dependency between two nodes.
@@ -165,10 +223,7 @@ func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableI
 	}
 }
 
-func (d *Dag) getCtxAndData() (context.Context, map[string]any) {
-	return context.Background(), make(map[string]any)
-}
-
+// DependencyAddIf adds a conditional dependency between two nodes.
 func (d *Dag) DependencyAddIf(dependent RunnableInterface, dependency RunnableInterface, condition func(context.Context, map[string]any) bool) {
 	depID := dependent.GetID()
 	depNodeID := dependency.GetID()
@@ -176,17 +231,11 @@ func (d *Dag) DependencyAddIf(dependent RunnableInterface, dependency RunnableIn
 		return
 	}
 
-	ctx, data := d.getCtxAndData()
-
-	if condition != nil && condition(ctx, data) {
-		if _, exists := d.dependencies[depID]; !exists {
-			d.dependencies[depID] = make([]string, 0)
-		}
-
-		if !contains(d.dependencies[depID], depNodeID) {
-			d.dependencies[depID] = append(d.dependencies[depID], depNodeID)
-		}
+	if _, exists := d.conditionalDependencies[depID]; !exists {
+		d.conditionalDependencies[depID] = make(map[string]func(context.Context, map[string]any) bool)
 	}
+
+	d.conditionalDependencies[depID][depNodeID] = condition
 }
 
 // DependencyList returns all dependencies for a given node.
@@ -215,69 +264,4 @@ func contains(slice []string, value string) bool {
 		}
 	}
 	return false
-}
-
-// buildDependencyGraph builds a graph of runner dependencies
-func (d *Dag) buildDependencyGraph(ctx context.Context, data map[string]any) map[RunnableInterface][]RunnableInterface {
-	graph := make(map[RunnableInterface][]RunnableInterface)
-	for _, runner := range d.runnables {
-		graph[runner] = make([]RunnableInterface, 0)
-		if deps, ok := d.dependencies[runner.GetID()]; ok {
-			for _, depID := range deps {
-				if depNode, ok := d.runnables[depID]; ok {
-					graph[runner] = append(graph[runner], depNode)
-				}
-			}
-		}
-	}
-	return graph
-}
-
-// topologicalSort performs a topological sort on the dependency graph
-func (d *Dag) topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]RunnableInterface, error) {
-	var result []RunnableInterface
-	visited := make(map[RunnableInterface]bool)
-	tempMark := make(map[RunnableInterface]bool)
-
-	var visit func(node RunnableInterface) error
-	visit = func(node RunnableInterface) error {
-		if tempMark[node] {
-			return errors.New("cycle detected")
-		}
-		if visited[node] {
-			return nil
-		}
-
-		tempMark[node] = true
-		for _, neighbor := range graph[node] {
-			if err := visit(neighbor); err != nil {
-				return err
-			}
-		}
-
-		tempMark[node] = false
-		visited[node] = true
-		result = append(result, node)
-		return nil
-	}
-
-	// Sort nodes by their dependencies
-	nodes := make([]RunnableInterface, 0, len(graph))
-	for node := range graph {
-		nodes = append(nodes, node)
-	}
-
-	// Sort nodes by number of dependencies
-	sort.Slice(nodes, func(i, j int) bool {
-		return len(graph[nodes[i]]) < len(graph[nodes[j]])
-	})
-
-	// Visit nodes with fewer dependencies first
-	for _, node := range nodes {
-		if err := visit(node); err != nil {
-			return nil, err
-		}
-	}
-
-	return result, nil
 }
