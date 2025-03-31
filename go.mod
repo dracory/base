@@ -6,7 +6,6 @@ require (
 	github.com/boombuler/barcode v1.0.2
 	github.com/disintegration/imaging v1.6.2
 	github.com/dromara/carbon/v2 v2.6.1
-	github.com/gouniverse/base v0.9.0
 	github.com/gouniverse/envenc v0.10.0
 	github.com/gouniverse/maputils v0.7.0
 	github.com/gouniverse/webserver v0.1.0

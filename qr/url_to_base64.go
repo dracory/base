@@ -6,7 +6,7 @@ import (
 
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/qr"
-	"github.com/gouniverse/base/img"
+	"github.com/dracory/base/img"
 )
 
 // UrlToQr returns a QR code for the given URL
