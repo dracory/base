@@ -1,6 +1,7 @@
 package steps
 
 import (
+	"context"
 	"errors"
 	"sort"
 )
@@ -23,7 +24,7 @@ func visitNode(node RunnableInterface, graph map[RunnableInterface][]RunnableInt
 
 	tempMark[node] = false
 	visited[node] = true
-	*result = append(*result, node)
+	*result = append([]RunnableInterface{node}, *result...)
 	return nil
 }
 
@@ -33,6 +34,7 @@ func topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]Runnabl
 	tempMark := make(map[RunnableInterface]bool)
 	result := []RunnableInterface{}
 
+	// Start with any node (since the graph is connected)
 	for node := range graph {
 		if err := visitNode(node, graph, visited, tempMark, &result); err != nil {
 			return nil, err
@@ -45,4 +47,40 @@ func topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]Runnabl
 	})
 
 	return result, nil
+}
+
+// buildDependencyGraph builds a graph of runner dependencies
+func buildDependencyGraph(runnables map[string]RunnableInterface, dependencies map[string][]string, conditionalDependencies map[string]map[string]func(context.Context, map[string]any) bool, ctx context.Context, data map[string]any) map[RunnableInterface][]RunnableInterface {
+	graph := make(map[RunnableInterface][]RunnableInterface)
+
+	// Add all nodes
+	for _, node := range runnables {
+		graph[node] = make([]RunnableInterface, 0)
+	}
+
+	// Add regular dependencies
+	for depID, depList := range dependencies {
+		if depNode, ok := runnables[depID]; ok {
+			for _, nodeID := range depList {
+				if node, ok := runnables[nodeID]; ok {
+					graph[depNode] = append(graph[depNode], node)
+				}
+			}
+		}
+	}
+
+	// Add conditional dependencies
+	for depID, conditions := range conditionalDependencies {
+		if depNode, ok := runnables[depID]; ok {
+			for nodeID, condition := range conditions {
+				if node, ok := runnables[nodeID]; ok {
+					if condition(ctx, data) {
+						graph[depNode] = append(graph[depNode], node)
+					}
+				}
+			}
+		}
+	}
+
+	return graph
 }
