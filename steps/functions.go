@@ -41,9 +41,15 @@ func topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]Runnabl
 		}
 	}
 
-	// Sort the result to make it deterministic
+	// First reverse the result to maintain topological order
+	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
+		result[i], result[j] = result[j], result[i]
+	}
+
+	// Sort the result to make it deterministic while preserving dependency order
+	// Sort by ID to ensure a consistent order
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].GetName() < result[j].GetName()
+		return result[i].GetID() < result[j].GetID()
 	})
 
 	return result, nil
