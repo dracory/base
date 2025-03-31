@@ -3,6 +3,8 @@ package steps
 import (
 	"context"
 
+	"slices"
+
 	"github.com/gouniverse/uid"
 )
 
@@ -28,12 +30,14 @@ type Dag struct {
 
 // NewDag creates a new DAG
 func NewDag() DagInterface {
-	dag := &Dag{}
+	dag := &Dag{
+		runnableSequence: make([]string, 0),
+		runnables:        make(map[string]RunnableInterface),
+		dependencies:     make(map[string][]string),
+		conditionalDependencies: make(map[string]map[string]func(context.Context, map[string]any) bool),
+	}
 	dag.SetName("New DAG")
 	dag.id = uid.HumanUid()
-	dag.runnables = make(map[string]RunnableInterface)
-	dag.dependencies = make(map[string][]string)
-	dag.conditionalDependencies = make(map[string]map[string]func(context.Context, map[string]any) bool)
 	return dag
 }
 
@@ -74,7 +78,7 @@ func (d *Dag) RunnableAdd(node ...RunnableInterface) {
 		}
 
 		d.runnables[id] = n
-		if !contains(d.runnableSequence, id) {
+		if !slices.Contains(d.runnableSequence, id) {
 			d.runnableSequence = append(d.runnableSequence, id)
 		}
 	}
@@ -141,7 +145,7 @@ func (d *Dag) RunnableList() []RunnableInterface {
 // Run executes all nodes in the DAG in the correct order
 func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 	// Build dependency graph
-	graph := d.buildDependencyGraph(ctx, data)
+	graph := buildDependencyGraph(d.runnables, d.dependencies, d.conditionalDependencies, ctx, data)
 
 	// Get execution order
 	order, err := topologicalSort(graph)
@@ -160,55 +164,11 @@ func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, ma
 	return ctx, data, nil
 }
 
-// buildDependencyGraph builds a graph of runner dependencies
-func (d *Dag) buildDependencyGraph(ctx context.Context, data map[string]any) map[RunnableInterface][]RunnableInterface {
-	graph := make(map[RunnableInterface][]RunnableInterface)
-
-	// Add all nodes
-	for _, node := range d.runnables {
-		graph[node] = make([]RunnableInterface, 0)
-	}
-
-	// Add regular dependencies
-	for depID, depList := range d.dependencies {
-		if node, ok := d.runnables[depID]; ok {
-			for _, dep := range depList {
-				if depNode, ok := d.runnables[dep]; ok {
-					graph[node] = append(graph[node], depNode)
-				}
-			}
-		}
-	}
-
-	// Add conditional dependencies
-	for depID, conditions := range d.conditionalDependencies {
-		if node, ok := d.runnables[depID]; ok {
-			for dep, condition := range conditions {
-				if depNode, ok := d.runnables[dep]; ok {
-					if condition(ctx, data) {
-						graph[node] = append(graph[node], depNode)
-					}
-				}
-			}
-		}
-	}
-
-	return graph
-}
-
-func (d *Dag) getCtxAndData() (context.Context, map[string]any) {
-	return context.Background(), make(map[string]any)
-}
-
 // DependencyAdd adds a dependency between two nodes.
 func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableInterface) {
 	depID := dependent.GetID()
 	if depID == "" {
 		return
-	}
-
-	if _, exists := d.dependencies[depID]; !exists {
-		d.dependencies[depID] = make([]string, 0)
 	}
 
 	for _, dep := range dependency {
@@ -217,7 +177,11 @@ func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableI
 			continue
 		}
 
-		if !contains(d.dependencies[depID], depNodeID) {
+		if _, exists := d.dependencies[depID]; !exists {
+			d.dependencies[depID] = make([]string, 0)
+		}
+
+		if !slices.Contains(d.dependencies[depID], depNodeID) {
 			d.dependencies[depID] = append(d.dependencies[depID], depNodeID)
 		}
 	}
@@ -226,8 +190,12 @@ func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableI
 // DependencyAddIf adds a conditional dependency between two nodes.
 func (d *Dag) DependencyAddIf(dependent RunnableInterface, dependency RunnableInterface, condition func(context.Context, map[string]any) bool) {
 	depID := dependent.GetID()
+	if depID == "" {
+		return
+	}
+
 	depNodeID := dependency.GetID()
-	if depID == "" || depNodeID == "" {
+	if depNodeID == "" {
 		return
 	}
 
@@ -235,33 +203,38 @@ func (d *Dag) DependencyAddIf(dependent RunnableInterface, dependency RunnableIn
 		d.conditionalDependencies[depID] = make(map[string]func(context.Context, map[string]any) bool)
 	}
 
-	d.conditionalDependencies[depID][depNodeID] = condition
+	if _, exists := d.conditionalDependencies[depID][depNodeID]; !exists {
+		d.conditionalDependencies[depID][depNodeID] = condition
+	}
 }
 
 // DependencyList returns all dependencies for a given node.
 func (d *Dag) DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface {
+	result := make([]RunnableInterface, 0)
 	id := node.GetID()
 	if id == "" {
-		return nil
-	}
-
-	if deps, ok := d.dependencies[id]; ok {
-		result := make([]RunnableInterface, 0, len(deps))
-		for _, depID := range deps {
-			if depNode, ok := d.runnables[depID]; ok {
-				result = append(result, depNode)
-			}
-		}
 		return result
 	}
-	return nil
-}
 
-func contains(slice []string, value string) bool {
-	for _, item := range slice {
-		if item == value {
-			return true
+	// Add regular dependencies
+	if deps, ok := d.dependencies[id]; ok {
+		for _, depID := range deps {
+			if n, ok := d.runnables[depID]; ok {
+				result = append(result, n)
+			}
 		}
 	}
-	return false
+
+	// Add conditional dependencies
+	if conds, ok := d.conditionalDependencies[id]; ok {
+		for depID, cond := range conds {
+			if n, ok := d.runnables[depID]; ok {
+				if cond(ctx, data) {
+					result = append(result, n)
+				}
+			}
+		}
+	}
+
+	return result
 }

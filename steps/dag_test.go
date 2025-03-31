@@ -2,10 +2,11 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"testing"
 )
 
-func TestDagBasic(t *testing.T) {
+func Test_Dag_Basic(t *testing.T) {
 	// Create a simple DAG with two steps
 	dag := NewDag()
 	step1 := NewStep()
@@ -39,7 +40,7 @@ func TestDagBasic(t *testing.T) {
 	}
 }
 
-func TestDagConditional(t *testing.T) {
+func Test_Dag_Conditional(t *testing.T) {
 	// Create a DAG with conditional dependencies
 	dag := NewDag()
 	step1 := NewStep()
@@ -87,7 +88,7 @@ func TestDagConditional(t *testing.T) {
 	}
 }
 
-func TestDagRemove(t *testing.T) {
+func Test_Dag_Remove(t *testing.T) {
 	// Create a DAG with steps
 	dag := NewDag()
 	step1 := NewStep()
@@ -127,7 +128,7 @@ func TestDagRemove(t *testing.T) {
 	}
 }
 
-func TestDagTopologicalSort(t *testing.T) {
+func Test_Dag_TopologicalSort(t *testing.T) {
 	// Create a DAG with a cycle
 	dag := NewDag()
 	step1 := NewStep()
@@ -158,7 +159,7 @@ func TestDagTopologicalSort(t *testing.T) {
 	}
 }
 
-func TestDagVisitNode(t *testing.T) {
+func Test_Dag_VisitNode(t *testing.T) {
 	// Create a simple DAG with nodes
 	dag := NewDag()
 	step1 := NewStep()
@@ -236,5 +237,187 @@ func TestDagVisitNode(t *testing.T) {
 
 	if len(result) != 2 {
 		t.Errorf("Expected 2 nodes in result, got %d", len(result))
+	}
+}
+
+func Test_Dag_Run_SuccessfulExecution(t *testing.T) {
+	step1 := NewStep()
+	step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		data["value"] = 1
+		return ctx, data, nil
+	})
+
+	step2 := NewStep()
+	step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		if _, ok := data["value"].(int); !ok {
+			return ctx, data, errors.New("value not found")
+		}
+		value := data["value"].(int)
+		data["value"] = value * 2
+		return ctx, data, nil
+	})
+
+	dag := NewDag()
+	dag.RunnableAdd(step1, step2)
+	dag.DependencyAdd(step2, step1)
+
+	ctx := context.Background()
+	data := make(map[string]any)
+	data["value"] = 0 // Initialize the value
+	_, data, err := dag.Run(ctx, data)
+	if err != nil {
+		t.Errorf("Run failed: %v", err)
+	}
+
+	if data["value"].(int) != 2 {
+		t.Errorf("Expected value to be 2, got: %v", data["value"])
+	}
+}
+
+func Test_Dag_Run_ErrorPropagation(t *testing.T) {
+	step1 := NewStep()
+	step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		return ctx, data, errors.New("step1 failed")
+	})
+
+	step2 := NewStep()
+	step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		if _, ok := data["value"].(int); !ok {
+			return ctx, data, errors.New("value not found")
+		}
+		value := data["value"].(int)
+		data["value"] = value * 2
+		return ctx, data, nil
+	})
+
+	dag := NewDag()
+	dag.RunnableAdd(step1, step2)
+	dag.DependencyAdd(step2, step1)
+
+	ctx := context.Background()
+	data := make(map[string]any)
+	_, _, err := dag.Run(ctx, data)
+	if err == nil {
+		t.Error("Expected error from step1, got nil")
+	} else if err.Error() != "step1 failed" {
+		t.Errorf("Expected specific error message, got: %v", err)
+	}
+}
+
+func Test_Dag_Run_CircularDependency(t *testing.T) {
+	dag := NewDag()
+	step1 := NewStep()
+	step2 := NewStep()
+	dag.RunnableAdd(step1, step2)
+	dag.DependencyAdd(step1, step2)
+	dag.DependencyAdd(step2, step1)
+
+	ctx := context.Background()
+	data := make(map[string]any)
+	_, _, err := dag.Run(ctx, data)
+	if err == nil {
+		t.Errorf("Expected error for circular dependency, got nil")
+	}
+}
+
+func Test_Dag_Run_StepDependencies(t *testing.T) {
+	dag := NewDag()
+	step1 := NewStep()
+	step2 := NewStep()
+
+	// Set handlers for steps
+	step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		data["value"] = 1
+		return ctx, data, nil
+	})
+
+	step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		if value, ok := data["value"].(int); ok {
+			data["value"] = value * 2
+		}
+		return ctx, data, nil
+	})
+
+	dag.RunnableAdd(step1, step2)
+	dag.DependencyAdd(step2, step1)
+
+	ctx := context.Background()
+	data := make(map[string]any)
+	data["value"] = 0 // Initialize the value
+	_, data, err := dag.Run(ctx, data)
+	if err != nil {
+		t.Errorf("Run failed: %v", err)
+	}
+
+	if data["value"].(int) != 2 {
+		t.Errorf("Expected value to be 2, got: %v", data["value"])
+	}
+}
+
+func Test_Dag_Run_ParallelStepExecution(t *testing.T) {
+	dag := NewDag()
+	step1 := NewStep()
+	step2 := NewStep()
+
+	// Set handlers for steps
+	step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		data["value"] = 1
+		return ctx, data, nil
+	})
+
+	step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		if value, ok := data["value"].(int); ok {
+			data["value"] = value * 2
+		}
+		return ctx, data, nil
+	})
+
+	dag.RunnableAdd(step1, step2)
+	dag.DependencyAdd(step2, step1)
+
+	ctx := context.Background()
+	data := make(map[string]any)
+	data["value"] = 0 // Initialize the value
+	_, data, err := dag.Run(ctx, data)
+	if err != nil {
+		t.Errorf("Run failed: %v", err)
+	}
+
+	if data["value"].(int) != 2 {
+		t.Errorf("Expected value to be 2, got: %v", data["value"])
+	}
+}
+
+func Test_Dag_Run_DependencyResolution(t *testing.T) {
+	dag := NewDag()
+	step1 := NewStep()
+	step2 := NewStep()
+
+	// Set handlers for steps
+	step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		data["value"] = 1
+		return ctx, data, nil
+	})
+
+	step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+		if value, ok := data["value"].(int); ok {
+			data["value"] = value * 2
+		}
+		return ctx, data, nil
+	})
+
+	dag.RunnableAdd(step1, step2)
+	dag.DependencyAdd(step2, step1)
+
+	ctx := context.Background()
+	data := make(map[string]any)
+	data["value"] = 0 // Initialize the value
+	_, data, err := dag.Run(ctx, data)
+	if err != nil {
+		t.Errorf("Run failed: %v", err)
+	}
+
+	if data["value"].(int) != 2 {
+		t.Errorf("Expected value to be 2, got: %v", data["value"])
 	}
 }
