@@ -226,19 +226,19 @@ func Test_TopologicalSort_DuplicateNames(t *testing.T) {
 	}
 
 	// Verify nodes are sorted by ID first (1, 2, 3)
-	if result[0].GetID() != "1" || result[1].GetID() != "3" || result[2].GetID() != "2" {
-		t.Errorf("Expected steps to be sorted by ID (1, 3, 2), got %s, %s, %s",
+	if result[0].GetID() != "1" || result[1].GetID() != "2" || result[2].GetID() != "3" {
+		t.Errorf("Expected steps to be sorted by ID (1, 2, 3), got %s, %s, %s",
 			result[0].GetID(), result[1].GetID(), result[2].GetID())
 	}
 
 	// Verify step2 comes after step1 due to dependency
-	if result[2] != step2 {
-		t.Errorf("Expected step2 to be third due to dependency on step1, got %s", result[2].GetID())
+	if result[1] != step2 {
+		t.Errorf("Expected step2 to be second due to dependency on step1, got %s", result[1].GetID())
 	}
 
 	// Verify step1 and step3 are in the correct group
-	if result[0].GetName() != "CommonName1" || result[1].GetName() != "CommonName2" {
-		t.Errorf("Expected step1 and step3 to be in positions 0 and 1, got %s and %s", result[0].GetName(), result[1].GetName())
+	if result[0] != step1 || result[2] != step3 {
+		t.Errorf("Expected step1 and step3 to be in positions 0 and 2, got %s and %s", result[0].GetID(), result[2].GetID())
 	}
 }
 
@@ -380,6 +380,7 @@ func Test_TopologicalSort_DuplicateNamesWithDependencies(t *testing.T) {
 		step3: {},             // step3 has no dependencies
 	}
 
+	// Test case: Duplicate names
 	result, err := topologicalSort(graph)
 	if err != nil {
 		t.Errorf("topologicalSort failed: %v", err)
@@ -434,134 +435,29 @@ func Test_BuildDependencyGraph_BasicChain(t *testing.T) {
 
 	// Create runnables map
 	runnables := map[string]RunnableInterface{
-		"step1": step1,
-		"step2": step2,
-		"step3": step3,
+		"1": step1,
+		"2": step2,
+		"3": step3,
 	}
 
-	// Create dependencies
+	// Set up dependencies
 	dependencies := map[string][]string{
-		"step2": {"step1"},
-		"step3": {"step2"},
+		"2": {"1"},  // Step2 depends on Step1
+		"3": {"2"},  // Step3 depends on Step2
 	}
 
-	conditionalDependencies := map[string]map[string]func(context.Context, map[string]any) bool{}
-
-	ctx := context.Background()
-	data := make(map[string]any)
-	graph := buildDependencyGraph(runnables, dependencies, conditionalDependencies, ctx, data)
+	// Build dependency graph
+	graph := buildDependencyGraph(runnables, dependencies)
 
 	// Verify graph structure
-	if len(graph) != 3 {
-		t.Errorf("Expected 3 nodes in graph, got %d", len(graph))
-	}
-
-	// Verify regular dependencies
 	if len(graph[step1]) != 0 {
-		t.Errorf("Expected step1 to have 0 dependencies, got %d", len(graph[step1]))
+		t.Errorf("Step1 should have no dependencies")
 	}
-
-	if len(graph[step2]) != 1 || graph[step2][0].GetID() != "1" {
-		t.Errorf("Expected step2 to depend on step1")
+	if len(graph[step2]) != 1 || graph[step2][0] != step1 {
+		t.Errorf("Step2 should depend only on Step1")
 	}
-
-	if len(graph[step3]) != 1 || graph[step3][0].GetID() != "2" {
-		t.Errorf("Expected step3 to depend on step2")
-	}
-}
-
-func Test_BuildDependencyGraph_ConditionalDependencies_NotMet(t *testing.T) {
-	// Create test steps
-	step1 := NewStep()
-	step1.SetName("Step1")
-	step1.SetID("1")
-	step2 := NewStep()
-	step2.SetName("Step2")
-	step2.SetID("2")
-	step3 := NewStep()
-	step3.SetName("Step3")
-	step3.SetID("3")
-
-	// Create runnables map
-	runnables := map[string]RunnableInterface{
-		"step1": step1,
-		"step2": step2,
-		"step3": step3,
-	}
-
-	// Create dependencies
-	dependencies := map[string][]string{
-		"step2": {"step1"},
-	}
-
-	// Create conditional dependencies
-	conditionalDependencies := map[string]map[string]func(context.Context, map[string]any) bool{
-		"step3": {
-			"step2": func(ctx context.Context, data map[string]any) bool {
-				return data["condition"] == true
-			},
-		},
-	}
-
-	ctx := context.Background()
-	data := map[string]any{
-		"condition": false,
-	}
-	graph := buildDependencyGraph(runnables, dependencies, conditionalDependencies, ctx, data)
-
-	// Verify regular dependencies
-	if len(graph[step2]) != 1 || graph[step2][0].GetID() != "1" {
-		t.Errorf("Expected step2 to depend on step1")
-	}
-
-	// Verify conditional dependencies not added
-	if len(graph[step3]) != 0 {
-		t.Errorf("Expected step3 to have 0 dependencies when condition is false")
-	}
-}
-
-func Test_BuildDependencyGraph_ConditionalDependencies_Met(t *testing.T) {
-	// Create test steps
-	step1 := NewStep()
-	step1.SetName("Step1")
-	step1.SetID("1")
-	step2 := NewStep()
-	step2.SetName("Step2")
-	step2.SetID("2")
-	step3 := NewStep()
-	step3.SetName("Step3")
-	step3.SetID("3")
-
-	// Create runnables map
-	runnables := map[string]RunnableInterface{
-		"step1": step1,
-		"step2": step2,
-		"step3": step3,
-	}
-
-	// Create dependencies
-	dependencies := map[string][]string{
-		"step2": {"step1"},
-	}
-
-	// Create conditional dependencies
-	conditionalDependencies := map[string]map[string]func(context.Context, map[string]any) bool{
-		"step3": {
-			"step2": func(ctx context.Context, data map[string]any) bool {
-				return data["condition"] == true
-			},
-		},
-	}
-
-	ctx := context.Background()
-	data := map[string]any{
-		"condition": true,
-	}
-	graph := buildDependencyGraph(runnables, dependencies, conditionalDependencies, ctx, data)
-
-	// Verify conditional dependencies added
-	if len(graph[step3]) != 1 || graph[step3][0].GetID() != "2" {
-		t.Errorf("Expected step3 to depend on step2 when condition is true")
+	if len(graph[step3]) != 1 || graph[step3][0] != step2 {
+		t.Errorf("Step3 should depend only on Step2")
 	}
 }
 
@@ -576,21 +472,18 @@ func Test_BuildDependencyGraph_CircularDependencies(t *testing.T) {
 
 	// Create runnables map
 	runnables := map[string]RunnableInterface{
-		"step1": step1,
-		"step2": step2,
+		"1": step1,
+		"2": step2,
 	}
 
-	// Create circular dependencies
+	// Set up dependencies
 	dependencies := map[string][]string{
-		"step1": {"step2"},
-		"step2": {"step1"},
+		"1": {"2"},  // Step1 depends on Step2
+		"2": {"1"},  // Step2 depends on Step1
 	}
 
-	conditionalDependencies := map[string]map[string]func(context.Context, map[string]any) bool{}
-
-	ctx := context.Background()
-	data := make(map[string]any)
-	graph := buildDependencyGraph(runnables, dependencies, conditionalDependencies, ctx, data)
+	// Build dependency graph
+	graph := buildDependencyGraph(runnables, dependencies)
 
 	// Verify graph structure
 	if len(graph) != 2 {
@@ -598,11 +491,11 @@ func Test_BuildDependencyGraph_CircularDependencies(t *testing.T) {
 	}
 
 	// Verify circular dependencies
-	if len(graph[step1]) != 1 || graph[step1][0].GetID() != "2" {
+	if len(graph[step1]) != 1 || graph[step1][0] != step2 {
 		t.Errorf("Expected step1 to depend on step2")
 	}
 
-	if len(graph[step2]) != 1 || graph[step2][0].GetID() != "1" {
+	if len(graph[step2]) != 1 || graph[step2][0] != step1 {
 		t.Errorf("Expected step2 to depend on step1")
 	}
 }

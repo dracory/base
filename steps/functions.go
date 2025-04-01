@@ -1,7 +1,6 @@
 package steps
 
 import (
-	"context"
 	"errors"
 	"sort"
 )
@@ -29,6 +28,13 @@ func visitNode(node RunnableInterface, graph map[RunnableInterface][]RunnableInt
 }
 
 // topologicalSort performs a topological sort on the dependency graph
+// The sorting is based on the ID of the nodes, in order to make the sorting deterministic
+//
+// Parameters:
+// - graph: The dependency graph
+// Returns:
+// - A slice of RunnableInterface in topological order
+// - An error if a cycle is detected
 func topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]RunnableInterface, error) {
 	visited := make(map[RunnableInterface]bool)
 	tempMark := make(map[RunnableInterface]bool)
@@ -92,48 +98,43 @@ func topologicalSort(graph map[RunnableInterface][]RunnableInterface) ([]Runnabl
 			return true // current should come before compare
 		}
 
-		// If both nodes have the same name, sort by ID
-		if current.GetName() == compare.GetName() {
-			return current.GetID() < compare.GetID()
+		// If both nodes have the same ID, sort by name
+		// should never happen
+		if current.GetID() == compare.GetID() {
+			return current.GetName() < compare.GetName()
 		}
 
-		// Otherwise, sort by name
-		return current.GetName() < compare.GetName()
+		// Otherwise, sort by ID
+		return current.GetID() < compare.GetID()
 	})
 
 	return result, nil
 }
 
 // buildDependencyGraph builds a graph of runner dependencies
-func buildDependencyGraph(runnables map[string]RunnableInterface, dependencies map[string][]string, conditionalDependencies map[string]map[string]func(context.Context, map[string]any) bool, ctx context.Context, data map[string]any) map[RunnableInterface][]RunnableInterface {
+func buildDependencyGraph(runnables map[string]RunnableInterface, dependencies map[string][]string) map[RunnableInterface][]RunnableInterface {
 	graph := make(map[RunnableInterface][]RunnableInterface)
 
-	// Add all nodes
+	// Add all nodes to the graph
 	for _, node := range runnables {
-		graph[node] = make([]RunnableInterface, 0)
+		graph[node] = []RunnableInterface{}
 	}
 
-	// Add regular dependencies
-	for depID, depList := range dependencies {
-		if depNode, ok := runnables[depID]; ok {
-			for _, nodeID := range depList {
-				if node, ok := runnables[nodeID]; ok {
-					graph[depNode] = append(graph[depNode], node)
-				}
-			}
+	// Add all dependencies
+	for dependentID, dependencyIDs := range dependencies {
+		dependent, ok := runnables[dependentID]
+		if !ok {
+			continue
 		}
-	}
 
-	// Add conditional dependencies
-	for depID, conditions := range conditionalDependencies {
-		if depNode, ok := runnables[depID]; ok {
-			for nodeID, condition := range conditions {
-				if node, ok := runnables[nodeID]; ok {
-					if condition(ctx, data) {
-						graph[depNode] = append(graph[depNode], node)
-					}
-				}
+		for _, dependencyID := range dependencyIDs {
+			dependency, ok := runnables[dependencyID]
+			if !ok {
+				continue
 			}
+
+			// Add dependency
+			graph[dependent] = append(graph[dependent], dependency)
 		}
 	}
 

@@ -56,10 +56,6 @@ type DagInterface interface {
 	// The dependent node will only execute after the dependency node has completed successfully.
 	DependencyAdd(dependent RunnableInterface, dependency ...RunnableInterface)
 
-	// DependencyAddIf adds a conditional dependency between nodes.
-	// The dependency will only exist if the condition function returns true.
-	DependencyAddIf(dependent RunnableInterface, dependency RunnableInterface, condition func(context.Context, map[string]any) bool)
-
 	// DependencyList returns all dependencies for a given node.
 	// The actual dependencies may vary based on the context and any conditional dependencies.
 	DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface

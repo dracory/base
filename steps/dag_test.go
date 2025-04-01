@@ -40,54 +40,6 @@ func Test_Dag_Basic(t *testing.T) {
 	}
 }
 
-func Test_Dag_Conditional(t *testing.T) {
-	// Create a DAG with conditional dependencies
-	dag := NewDag()
-	step1 := NewStep()
-	step2 := NewStep()
-	step3 := NewStep()
-	step1.SetName("Step1")
-	step2.SetName("Step2")
-	step3.SetName("Step3")
-
-	// Set handlers for steps
-	step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-		return ctx, data, nil
-	})
-	step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-		return ctx, data, nil
-	})
-	step3.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-		return ctx, data, nil
-	})
-
-	// Add steps to DAG
-	dag.RunnableAdd(step1, step2, step3)
-
-	// Add regular dependency
-	dag.DependencyAdd(step2, step1)
-
-	// Add conditional dependency
-	dag.DependencyAddIf(step3, step2, func(ctx context.Context, data map[string]any) bool {
-		return data["condition"] == true
-	})
-
-	// Test with condition true
-	ctx := context.Background()
-	dataTrue := map[string]any{"condition": true}
-	_, dataTrue, err := dag.Run(ctx, dataTrue)
-	if err != nil {
-		t.Errorf("Run failed with condition true: %v", err)
-	}
-
-	// Test with condition false
-	dataFalse := map[string]any{"condition": false}
-	_, dataFalse, err = dag.Run(ctx, dataFalse)
-	if err != nil {
-		t.Errorf("Run failed with condition false: %v", err)
-	}
-}
-
 func Test_Dag_Remove(t *testing.T) {
 	// Create a DAG with steps
 	dag := NewDag()

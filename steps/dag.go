@@ -23,9 +23,6 @@ type Dag struct {
 
 	// dependencies (DependentID, DependencyIDs []string)
 	dependencies map[string][]string
-
-	// conditional dependencies (DependentID, DependencyID, Condition func)
-	conditionalDependencies map[string]map[string]func(context.Context, map[string]any) bool
 }
 
 // NewDag creates a new DAG
@@ -34,7 +31,6 @@ func NewDag() DagInterface {
 		runnableSequence: make([]string, 0),
 		runnables:        make(map[string]RunnableInterface),
 		dependencies:     make(map[string][]string),
-		conditionalDependencies: make(map[string]map[string]func(context.Context, map[string]any) bool),
 	}
 	dag.SetName("New DAG")
 	dag.id = uid.HumanUid()
@@ -119,17 +115,6 @@ func (d *Dag) RunnableRemove(node RunnableInterface) bool {
 		}
 	}
 
-	// Remove conditional dependencies
-	delete(d.conditionalDependencies, id)
-
-	// Remove this node from other nodes' conditional dependencies
-	for depID, conditions := range d.conditionalDependencies {
-		delete(conditions, id)
-		if len(conditions) == 0 {
-			delete(d.conditionalDependencies, depID)
-		}
-	}
-
 	return true
 }
 
@@ -145,7 +130,7 @@ func (d *Dag) RunnableList() []RunnableInterface {
 // Run executes all nodes in the DAG in the correct order
 func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 	// Build dependency graph
-	graph := buildDependencyGraph(d.runnables, d.dependencies, d.conditionalDependencies, ctx, data)
+	graph := buildDependencyGraph(d.runnables, d.dependencies)
 
 	// Get execution order
 	order, err := topologicalSort(graph)
@@ -166,75 +151,30 @@ func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, ma
 
 // DependencyAdd adds a dependency between two nodes.
 func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableInterface) {
-	depID := dependent.GetID()
-	if depID == "" {
-		return
-	}
-
+	dependentID := dependent.GetID()
 	for _, dep := range dependency {
-		depNodeID := dep.GetID()
-		if depNodeID == "" {
-			continue
-		}
-
-		if _, exists := d.dependencies[depID]; !exists {
-			d.dependencies[depID] = make([]string, 0)
-		}
-
-		if !slices.Contains(d.dependencies[depID], depNodeID) {
-			d.dependencies[depID] = append(d.dependencies[depID], depNodeID)
-		}
-	}
-}
-
-// DependencyAddIf adds a conditional dependency between two nodes.
-func (d *Dag) DependencyAddIf(dependent RunnableInterface, dependency RunnableInterface, condition func(context.Context, map[string]any) bool) {
-	depID := dependent.GetID()
-	if depID == "" {
-		return
-	}
-
-	depNodeID := dependency.GetID()
-	if depNodeID == "" {
-		return
-	}
-
-	if _, exists := d.conditionalDependencies[depID]; !exists {
-		d.conditionalDependencies[depID] = make(map[string]func(context.Context, map[string]any) bool)
-	}
-
-	if _, exists := d.conditionalDependencies[depID][depNodeID]; !exists {
-		d.conditionalDependencies[depID][depNodeID] = condition
+		depID := dep.GetID()
+		d.dependencies[dependentID] = append(d.dependencies[dependentID], depID)
 	}
 }
 
 // DependencyList returns all dependencies for a given node.
 func (d *Dag) DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface {
-	result := make([]RunnableInterface, 0)
-	id := node.GetID()
-	if id == "" {
-		return result
-	}
-
-	// Add regular dependencies
-	if deps, ok := d.dependencies[id]; ok {
+	dependencies := []RunnableInterface{}
+	
+	// Get all direct dependencies
+	dependentID := node.GetID()
+	if deps, ok := d.dependencies[dependentID]; ok {
 		for _, depID := range deps {
-			if n, ok := d.runnables[depID]; ok {
-				result = append(result, n)
+			dep, ok := d.runnables[depID]
+			if !ok {
+				continue
 			}
+
+			// Add regular dependency
+			dependencies = append(dependencies, dep)
 		}
 	}
 
-	// Add conditional dependencies
-	if conds, ok := d.conditionalDependencies[id]; ok {
-		for depID, cond := range conds {
-			if n, ok := d.runnables[depID]; ok {
-				if cond(ctx, data) {
-					result = append(result, n)
-				}
-			}
-		}
-	}
-
-	return result
+	return dependencies
 }
