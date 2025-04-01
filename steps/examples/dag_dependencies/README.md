@@ -1,6 +1,6 @@
 # Dependencies Example
 
-This example demonstrates how to create steps with complex dependencies and ensure they execute in the correct order, using a real-world scenario of calculating a final price.
+This example demonstrates how to create steps with complex dependencies and ensure they execute in the correct order, using a data processing scenario.
 
 ## Overview
 
@@ -8,13 +8,22 @@ The example shows:
 1. How to create multiple steps with different operations
 2. How to set up complex dependencies between steps
 3. How the steps are automatically sorted and executed in dependency order
+4. How to maintain proper execution flow through dependencies
 
 ## Key Concepts
 
-- Step Dependencies: Using `AddDependency` to specify that one step depends on another
+- Step Dependencies: Using `DependencyAdd` to specify that one step depends on another
 - Topological Sorting: The steps are automatically sorted to ensure dependencies are respected
 - Execution Order: Steps are executed in the order determined by their dependencies
 - Complex Dependencies: Steps can depend on multiple other steps
+
+## Data Processing Flow
+
+The example demonstrates a simple data processing pipeline:
+
+1. `Set Initial Data`: Initializes an array of numbers [1, 2, 3]
+2. `Process Data`: Multiplies each number by 2 (result: [2, 4, 6])
+3. `Calculate Sum`: Calculates the sum of the processed numbers (result: 12)
 
 ## Running the Example
 
@@ -32,21 +41,32 @@ go test -v
 
 The program will output:
 ```
-Base price: 100
-Final price: 108
-Steps completed: [SetBasePrice ApplyDiscount AddShipping CalculateTax]
+Final sum: 12
+Steps completed: [Set Initial Data Process Data Calculate Sum]
 ```
 
-## Price Calculation Process
+## Data Processing Process
 
 The steps perform the following operations in order:
-1. `SetBasePrice`: Sets the base price to 100
-2. `ApplyDiscount`: Applies a 20% discount (result: 80)
-3. `AddShipping`: Adds a fixed shipping cost of 10 (result: 90)
-4. `CalculateTax`: Adds 20% tax (result: 108)
+1. `Set Initial Data`: Creates an array with numbers [1, 2, 3]
+2. `Process Data`: Multiplies each number by 2 (result: [2, 4, 6])
+3. `Calculate Sum`: Adds up all numbers (result: 12)
 
-The final price is calculated as:
-1. Start with base price: 100
-2. Apply 20% discount: 100 * 0.8 = 80
-3. Add shipping: 80 + 10 = 90
-4. Add 20% tax: 90 * 1.2 = 108
+The final sum is calculated as:
+1. Start with initial numbers: [1, 2, 3]
+2. Double each number: [2, 4, 6]
+3. Calculate sum: 2 + 4 + 6 = 12
+
+## Implementation Details
+
+### Step Dependencies
+- `Process Data` depends on `Set Initial Data`
+- `Calculate Sum` depends on `Process Data`
+
+### DAG Structure
+The DAG is created with three steps:
+1. `Set Initial Data` - Creates the initial data
+2. `Process Data` - Processes the data
+3. `Calculate Sum` - Calculates the final result
+
+The dependencies ensure that each step only runs after its dependencies have completed.

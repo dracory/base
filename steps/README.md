@@ -4,118 +4,111 @@ The steps package provides a flexible and extensible framework for defining and 
 
 ## Key Features
 
-- **Step-based Execution**: Define operations as individual steps that can be executed in sequence
-- **Dependency Management**: Steps can depend on other steps, ensuring proper execution order
+- **Simple Step Definitions**: Easily define individual operations as reusable steps
+- **Organized Pipelines**: Group related operations into logical pipelines for better maintainability
+- **Flexible Dependencies**: Create complex workflows with step dependencies
 - **Cycle Detection**: Automatically detects and prevents circular dependencies
-- **Context Management**: Each step receives a context object that can be used to share data between steps
-- **Error Propagation**: Errors are properly propagated through the step chain
-- **Testable**: Designed with testing in mind, using real database connections and avoiding mocks
+- **Context Management**: Share data between steps using a context object
+- **Error Handling**: Proper error propagation through the entire workflow
+- **Testable**: Designed with testing in mind
 
-## Interfaces
+## Core Components
 
-### StepContextInterface
-```go
-type StepContextInterface interface {
-    object.SerializablePropertyObjectInterface
-}
+- [Step](https://github.com/dracory/base/blob/main/steps/step.go): Represents a single execution step with unique ID, name, and execution handler
+- [Pipeline](https://github.com/dracory/base/blob/main/steps/pipeline.go): Groups related steps into a logical unit that can be treated as a single step
+- [Dag](https://github.com/dracory/base/blob/main/steps/dag.go): Manages a collection of steps and their dependencies, executing them in the correct order
+
+## Component Hierarchy
+
 ```
-- Base interface for step execution context
-- Extends `object.SerializablePropertyObjectInterface` for data management
-
-### StepInterface
-```go
-type StepInterface interface {
-    object.SerializablePropertyObjectInterface
-
-    // GetExecute returns the function that implements the step's execution logic.
-    GetExecute() func(ctx StepContextInterface) error
-
-    // SetExecute allows setting or modifying the step's execution logic.
-    SetExecute(fn func(ctx StepContextInterface) error) StepInterface
-
-    // AddDependency adds a single dependency on another step.
-    AddDependency(step StepInterface) StepInterface
-
-    // AddDependencies adds multiple dependencies at once.
-    AddDependencies(steps ...StepInterface) StepInterface
-
-    // GetDependencies returns a list of all steps that this step depends on.
-    GetDependencies() []StepInterface
-
-    // Run executes the step's logic within the given context.
-    Run(ctx StepContextInterface) error
-
-    // Name returns the name of the step.
-    Name() string
-
-    // SetName sets the name of the step.
-    SetName(name string) StepInterface
-}
+Runnable
+├── Step (basic unit of work, single operation)
+├── Pipeline (runs a set of runnables in the sequence they are added)
+└── Dag (advanced workflow manager with dependencies between runnables)
 ```
-- Defines a single execution step
-- Supports dependency management
-- Provides execution and error handling
 
-### DagInterface
-```go
-type DagInterface interface {
-    // AddStep adds a single step to the DAG.
-    AddStep(step StepInterface)
-
-    // AddSteps adds multiple steps to the DAG at once.
-    AddSteps(steps ...StepInterface)
-
-    // RemoveStep removes a step from the DAG.
-    RemoveStep(step StepInterface) bool
-
-    // GetSteps returns all steps in the DAG.
-    GetSteps() []StepInterface
-
-    // Run executes all steps in the DAG within the given context.
-    Run(ctx StepContextInterface) error
-}
-```
-- Manages a collection of steps
-- Executes steps in dependency order
-- Handles error propagation
-
-## Usage
+## Usage Examples
 
 ### Creating Steps
 ```go
-// Create a simple step
-step := NewStep(func(ctx StepContextInterface) error {
-    ctx.Set("key", "value")
-    return nil
+// Create a step with an execution function
+step := NewStep()
+step.SetName("My Step")
+step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+    data["key"] = "value"
+    return ctx, data, nil
+})
+```
+
+### Creating a Pipeline
+```go
+// Create steps for a pipeline
+step1 := NewStep()
+step1.SetName("Process Data")
+step1.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+    data["processed"] = true
+    return ctx, data, nil
 })
 
-// Create a step with dependencies
-step1 := NewStep(func(ctx StepContextInterface) error {
-    ctx.Set("A", 1)
-    return nil
+step2 := NewStep()
+step2.SetName("Validate Data")
+step2.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+    if !data["processed"].(bool) {
+        return ctx, data, errors.New("data not processed")
+    }
+    return ctx, data, nil
 })
 
-step2 := NewStep(func(ctx StepContextInterface) error {
-    value := ctx.Get("A").(int)
-    ctx.Set("B", value*2)
-    return nil
-}).AddDependency(step1)
+// Create a pipeline
+pipeline := NewPipeline()
+pipeline.SetName("Data Processing Pipeline")
+
+// Add steps to pipeline
+pipeline.RunnableAdd(step1, step2)
+```
+
+### Creating a DAG
+```go
+// Create a DAG
+dag := NewDag()
+dag.SetName("My DAG")
+
+// Add steps
+dag.RunnableAdd(step1, step2)
+
+// Add dependencies
+dag.DependencyAdd(step2, step1) // step2 depends on step1
+```
+
+### Using a Pipeline in a DAG
+```go
+// Create a pipeline with steps
+pipeline := NewPipeline()
+pipeline.SetName("Data Processing Pipeline")
+
+// Add steps to pipeline
+pipeline.RunnableAdd(step1, step2)
+
+// Create a DAG
+dag := NewDag()
+dag.SetName("My DAG")
+
+// Add pipeline to DAG
+dag.RunnableAdd(pipeline)
+
+// Add other steps that depend on the pipeline
+dag.RunnableAdd(step3)
+dag.DependencyAdd(step3, pipeline)
 ```
 
 ### Executing Steps
 ```go
-// Create a DAG
-dag := Dag()
-
-// Add steps
-dag.AddStep(step1)
-dag.AddStep(step2)
-
-// Create a context
-ctx := NewStepContext()
+// Create a context and data map
+ctx := context.Background()
+data := make(map[string]any)
 
 // Execute all steps
-err := dag.Run(ctx)
+_, data, err := dag.Run(ctx, data)
 if err != nil {
     // Handle error
 }
@@ -134,7 +127,7 @@ The package includes comprehensive tests that verify:
 
 ## Dependencies
 
-- `github.com/dracory/base/object`: For property object and serialization functionality
+- `github.com/gouniverse/uid`: For generating unique IDs
 
 ## Best Practices
 
@@ -143,42 +136,32 @@ The package includes comprehensive tests that verify:
 3. Use the context for data sharing between steps
 4. Define dependencies when steps must be executed in a specific order
 5. Avoid creating circular dependencies between steps
+6. Use pipelines to group related steps into logical units
+7. Implement proper error handling in each step
 
-## Example
+## Examples
 
-```go
-// Create a test context
-type MyContext struct {
-    object.SerializablePropertyObject
-    value int
-}
+The package includes several examples demonstrating different use cases:
 
-// Create steps
-step1 := NewStep(func(ctx StepContextInterface) error {
-    ctx.(*MyContext).value = 1
-    return nil
-})
+### Basic Usage Example
+- Shows how to create and execute simple steps
+- Demonstrates basic step dependencies
+- Location: [examples/dag_basic_usage](examples/dag_basic_usage)
 
-step2 := NewStep(func(ctx StepContextInterface) error {
-    ctx.(*MyContext).value = 2
-    return nil
-})
+### Conditional Logic Example
+- Demonstrates how to implement conditional logic using DAGs and pipelines
+- Shows different step chains for different scenarios
+- Location: [examples/dag_conditional_logic](examples/dag_conditional_logic)
 
-// Set up dependencies
-step2.AddDependency(step1) // step2 depends on step1
+### Dependencies Example
+- Shows how to create steps with complex dependencies
+- Demonstrates proper execution order through dependencies
+- Location: [examples/dag_dependencies](examples/dag_dependencies)
 
-// Create and run steps
-dag := Dag()
-dag.AddStep(step1)
-dag.AddStep(step2)
-
-ctx := &MyContext{}
-err := dag.Run(ctx)
-if err != nil {
-    // Handle error
-}
-// ctx.value will be 2 after execution
-```
+### Error Handling Example
+- Demonstrates error handling in a DAG
+- Shows how errors are propagated through the DAG
+- Location: [examples/dag_error_handling](examples/dag_error_handling)
 
 ## Error Handling
 
@@ -187,3 +170,5 @@ The package will return errors in the following cases:
 - If any step execution fails
 - If a step is added multiple times
 - If dependencies are not properly defined
+- If pipeline execution fails
+- If conditional logic conditions are not met
