@@ -3,12 +3,12 @@ package basic_usage
 import (
 	"context"
 
-	"github.com/dracory/base/steps"
+	"github.com/dracory/base/wf"
 )
 
 // NewSetValueStep creates a new step that sets a value
-func NewSetValueStep() steps.StepInterface {
-	step := steps.NewStep()
+func NewSetValueStep() wf.StepInterface {
+	step := wf.NewStep()
 	step.SetName("Set Value")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		data["value"] = 42
@@ -18,8 +18,8 @@ func NewSetValueStep() steps.StepInterface {
 }
 
 // NewIncrementStep creates a new step that increments a value
-func NewIncrementStep() steps.StepInterface {
-	step := steps.NewStep()
+func NewIncrementStep() wf.StepInterface {
+	step := wf.NewStep()
 	step.SetName("Increment Value")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		value := data["value"].(int)
@@ -31,8 +31,8 @@ func NewIncrementStep() steps.StepInterface {
 }
 
 // NewMultipleIncrementDag creates a DAG with multiple increment steps
-func NewMultipleIncrementDag() steps.DagInterface {
-	dag := steps.NewDag()
+func NewMultipleIncrementDag() wf.DagInterface {
+	dag := wf.NewDag()
 	dag.SetName("Multiple Increment DAG")
 	
 	// Add 4 increment steps

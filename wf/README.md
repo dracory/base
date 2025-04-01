@@ -1,12 +1,20 @@
-# Steps Package
+# WF (Workflow) Package
 
-The steps package provides a flexible and extensible framework for defining and executing sequential operations in Go. It implements a DAG (Directed Acyclic Graph) pattern for managing dependencies between operations.
+The wf package provides a flexible and extensible framework for defining and executing sequential operations in Go.
+
+The Runnable interface is implemented by the Step, Pipeline, and Dag types.
+
+The Step type is used for representing a single unit of work that can be executed within a given context and specified data.
+
+The Pipeline type is used for grouping related runnables and executing them in sequence.
+
+The Dag (Directed Acyclic Graph) type is used for advanced workflow management with dependencies between runnables.
 
 ## Key Features
 
 - **Simple Step Definitions**: Easily define individual operations as reusable steps
 - **Organized Pipelines**: Group related operations into logical pipelines for better maintainability
-- **Flexible Dependencies**: Create complex workflows with step dependencies
+- **Flexible Dependencies**: Create complex workflows with step dependencies using DAG
 - **Cycle Detection**: Automatically detects and prevents circular dependencies
 - **Context Management**: Share data between steps using a context object
 - **Error Handling**: Proper error propagation through the entire workflow
@@ -14,9 +22,9 @@ The steps package provides a flexible and extensible framework for defining and 
 
 ## Core Components
 
-- [Step](https://github.com/dracory/base/blob/main/steps/step.go): Represents a single execution step with unique ID, name, and execution handler
-- [Pipeline](https://github.com/dracory/base/blob/main/steps/pipeline.go): Groups related steps into a logical unit that can be treated as a single step
-- [Dag](https://github.com/dracory/base/blob/main/steps/dag.go): Manages a collection of steps and their dependencies, executing them in the correct order
+- [Step](https://github.com/dracory/base/blob/main/wf/step.go): Represents a single execution step with unique ID, name, and execution handler
+- [Pipeline](https://github.com/dracory/base/blob/main/wf/pipeline.go): Groups related steps into a logical unit that can be treated as a single step
+- [Dag](https://github.com/dracory/base/blob/main/wf/dag.go): Manages a collection of steps and their dependencies, executing them in the correct order
 
 ## Component Hierarchy
 

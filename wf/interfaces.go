@@ -1,4 +1,4 @@
-package steps
+package wf
 
 import (
 	"context"

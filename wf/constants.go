@@ -1,4 +1,4 @@
-package steps
+package wf
 
 const (
 	visitStateUnvisited = "unvisited"

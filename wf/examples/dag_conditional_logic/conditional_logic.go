@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/dracory/base/steps"
+	"github.com/dracory/base/wf"
 )
 
 // NewStepProcessOrder creates a step that processes the order
-func NewStepProcessOrder() steps.StepInterface {
-	step := steps.NewStep()
+func NewStepProcessOrder() wf.StepInterface {
+	step := wf.NewStep()
 	step.SetName("ProcessOrder")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		stepsExecuted := data["stepsExecuted"].([]string)
@@ -20,8 +20,8 @@ func NewStepProcessOrder() steps.StepInterface {
 }
 
 // NewStepApplyDiscount creates a step that applies a discount
-func NewStepApplyDiscount() steps.StepInterface {
-	step := steps.NewStep()
+func NewStepApplyDiscount() wf.StepInterface {
+	step := wf.NewStep()
 	step.SetName("ApplyDiscount")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		totalAmount := data["totalAmount"].(float64)
@@ -34,8 +34,8 @@ func NewStepApplyDiscount() steps.StepInterface {
 }
 
 // NewStepAddShipping creates a step that adds shipping cost
-func NewStepAddShipping() steps.StepInterface {
-	step := steps.NewStep()
+func NewStepAddShipping() wf.StepInterface {
+	step := wf.NewStep()
 	step.SetName("AddShipping")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		totalAmount := data["totalAmount"].(float64)
@@ -48,8 +48,8 @@ func NewStepAddShipping() steps.StepInterface {
 }
 
 // NewStepCalculateTax creates a step that calculates tax
-func NewStepCalculateTax() steps.StepInterface {
-	step := steps.NewStep()
+func NewStepCalculateTax() wf.StepInterface {
+	step := wf.NewStep()
 	step.SetName("CalculateTax")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		totalAmount := data["totalAmount"].(float64)
@@ -75,8 +75,8 @@ func NewStepCalculateTax() steps.StepInterface {
 // Returns:
 // - dag: The DAG with conditional logic
 // - error: Error if any
-func NewConditionalDag(orderType string, totalAmount float64) (steps.DagInterface, error) {
-	dag := steps.NewDag()
+func NewConditionalDag(orderType string, totalAmount float64) (wf.DagInterface, error) {
+	dag := wf.NewDag()
 	dag.SetName("Conditional Logic Example DAG")
 
 	// Create common steps
@@ -124,8 +124,8 @@ func RunConditionalExample(orderType string, totalAmount float64) (map[string]an
 	return data, nil
 }
 
-func NewConditionalDagWithPipelines(orderType string, totalAmount float64) (steps.DagInterface, error) {
-	dag := steps.NewDag()
+func NewConditionalDagWithPipelines(orderType string, totalAmount float64) (wf.DagInterface, error) {
+	dag := wf.NewDag()
 	dag.SetName("Conditional Logic Example DAG")
 
 	// Create common steps
@@ -133,13 +133,13 @@ func NewConditionalDagWithPipelines(orderType string, totalAmount float64) (step
 	applyDiscount := NewStepApplyDiscount()
 	calculateTax := NewStepCalculateTax()
 
-	digitalPipeline := steps.NewPipeline()
+	digitalPipeline := wf.NewPipeline()
 	digitalPipeline.RunnableAdd(processOrder, applyDiscount, calculateTax)
 
-	physicalPipeline := steps.NewPipeline()
+	physicalPipeline := wf.NewPipeline()
 	physicalPipeline.RunnableAdd(processOrder, applyDiscount, NewStepAddShipping(), calculateTax)
 
-	subscriptionPipeline := steps.NewPipeline()
+	subscriptionPipeline := wf.NewPipeline()
 	subscriptionPipeline.RunnableAdd(processOrder, applyDiscount, calculateTax)
 
 	// Add shipping for physical orders

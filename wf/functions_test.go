@@ -1,4 +1,4 @@
-package steps
+package wf
 
 import (
 	"context"
@@ -442,8 +442,8 @@ func Test_BuildDependencyGraph_BasicChain(t *testing.T) {
 
 	// Set up dependencies
 	dependencies := map[string][]string{
-		"2": {"1"},  // Step2 depends on Step1
-		"3": {"2"},  // Step3 depends on Step2
+		"2": {"1"}, // Step2 depends on Step1
+		"3": {"2"}, // Step3 depends on Step2
 	}
 
 	// Build dependency graph
@@ -478,8 +478,8 @@ func Test_BuildDependencyGraph_CircularDependencies(t *testing.T) {
 
 	// Set up dependencies
 	dependencies := map[string][]string{
-		"1": {"2"},  // Step1 depends on Step2
-		"2": {"1"},  // Step2 depends on Step1
+		"1": {"2"}, // Step1 depends on Step2
+		"2": {"1"}, // Step2 depends on Step1
 	}
 
 	// Build dependency graph

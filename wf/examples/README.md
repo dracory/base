@@ -1,6 +1,6 @@
-# Steps Examples
+# WF Examples
 
-This directory contains example code demonstrating various features of the steps package. Each example is in its own folder with a main program and tests.
+This directory contains example code demonstrating various features of the wf package. Each example is in its own folder with a main program and tests.
 
 ## Examples
 

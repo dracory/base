@@ -1,4 +1,4 @@
-package steps
+package wf
 
 import (
 	"context"
@@ -161,7 +161,7 @@ func (d *Dag) DependencyAdd(dependent RunnableInterface, dependency ...RunnableI
 // DependencyList returns all dependencies for a given node.
 func (d *Dag) DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface {
 	dependencies := []RunnableInterface{}
-	
+
 	// Get all direct dependencies
 	dependentID := node.GetID()
 	if deps, ok := d.dependencies[dependentID]; ok {
