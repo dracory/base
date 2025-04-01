@@ -60,11 +60,6 @@ func NewErrorHandlingDag() steps.DagInterface {
 	dag.DependencyAdd(processStep, initialStep)
 	dag.DependencyAdd(errorStep, processStep)
 	
-	// Add error handling
-	dag.DependencyAddIf(errorStep, processStep, func(ctx context.Context, data map[string]any) bool {
-			return true // Always allow error step to run
-		})
-	
 	return dag
 }
 
