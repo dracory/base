@@ -82,7 +82,6 @@ func NewConditionalDag(orderType string, totalAmount float64) (steps.DagInterfac
 	processOrder := NewStepProcessOrder()
 	applyDiscount := NewStepApplyDiscount()
 	calculateTax := NewStepCalculateTax()
-	addShipping := NewStepAddShipping()
 
 	// Add common steps to DAG
 	dag.RunnableAdd(processOrder, applyDiscount, calculateTax)
@@ -92,6 +91,7 @@ func NewConditionalDag(orderType string, totalAmount float64) (steps.DagInterfac
 
 	// Add shipping step and dependencies only for physical orders
 	if orderType == "physical" {
+		addShipping := NewStepAddShipping()
 		dag.RunnableAdd(addShipping)
 		dag.DependencyAdd(addShipping, applyDiscount)
 		dag.DependencyAdd(calculateTax, addShipping)
@@ -120,5 +120,5 @@ func RunConditionalExample(orderType string, totalAmount float64) (map[string]an
 		return nil, err
 	}
 
-	return data, err
+	return data, nil
 }
