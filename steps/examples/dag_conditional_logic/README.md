@@ -1,20 +1,39 @@
 # Conditional Logic Example
 
-This example demonstrates how to use conditional logic to skip steps based on the context. It shows how to create different step chains based on the type of order being processed.
+This example demonstrates how to implement conditional logic using DAGs and pipelines in the Dracory steps package. It shows two approaches to handling different order types (digital, physical, subscription) with varying processing requirements.
 
-## Overview
+## Key Features
 
-The example shows:
-1. How to create steps with dependencies
-2. How to conditionally skip steps based on context
-3. How to create different step chains for different scenarios
-4. How to maintain proper step ordering
+1. DAG Implementation:
+   - Uses dependencies to maintain step ordering
+   - Conditionally adds steps based on order type
+   - Maintains proper execution flow through dependencies
 
-## Key Concepts
+2. Pipeline Implementation:
+   - Groups related steps into logical pipelines
+   - Simplifies conditional logic by adding steps to pipelines
+   - Maintains proper execution order within pipelines
+   - Reduces code duplication
 
-- Conditional Skipping: Steps can be skipped based on context conditions
-- Step Dependencies: Maintaining proper dependencies between steps
-- Different Step Chains: Creating different step chains for different scenarios
+## Order Types and Processing
+
+### Digital Orders
+- ProcessOrder → ApplyDiscount → CalculateTax
+- No shipping cost
+- 10% discount applied
+- 20% tax applied
+
+### Physical Orders
+- ProcessOrder → ApplyDiscount → AddShipping → CalculateTax
+- Fixed $5 shipping cost
+- 10% discount applied
+- 20% tax applied
+
+### Subscription Orders
+- ProcessOrder → ApplyDiscount → CalculateTax
+- No shipping cost
+- 10% discount applied
+- 20% tax applied
 
 ## Running the Example
 
@@ -22,27 +41,30 @@ To run this example:
 
 ```bash
 # Run the tests
+# Tests both DAG and pipeline implementations
 go test -v
 
 # Run the main program
+# Demonstrates both implementations
 go run main.go
 ```
 
-## Example Scenarios
+## Implementation Details
 
-The example demonstrates three different order types:
+### DAG Implementation
+- Uses direct dependencies between steps
+- Requires careful dependency management
+- More verbose for complex conditional logic
 
-1. Digital Order:
-   - Processes the order
-   - Applies a discount
-   - Calculates tax (no shipping needed)
+### Pipeline Implementation
+- Groups related steps into pipelines
+- Simplifies conditional logic
+- More maintainable for complex scenarios
+- Easier to modify step order within pipelines
 
-2. Physical Order:
-   - Processes the order
-   - Applies a discount
-   - Adds shipping cost
-   - Calculates tax
+## Example Output
 
-3. Subscription Order:
-   - Processes the order
-   - Applies a discount (no shipping or tax needed)
+When running `main.go`, you'll see:
+1. Results from the DAG implementation
+2. Results from the pipeline implementation
+3. Both should produce identical results for each order type

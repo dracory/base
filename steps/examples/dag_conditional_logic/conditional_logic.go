@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	"github.com/dracory/base/steps"
 )
@@ -105,6 +106,58 @@ func NewConditionalDag(orderType string, totalAmount float64) (steps.DagInterfac
 // RunConditionalExample runs the conditional logic example
 func RunConditionalExample(orderType string, totalAmount float64) (map[string]any, error) {
 	dag, err := NewConditionalDag(orderType, totalAmount)
+	if err != nil {
+		return nil, err
+	}
+	ctx := context.Background()
+	data := map[string]any{
+		"orderType":     orderType,
+		"totalAmount":   totalAmount,
+		"stepsExecuted": []string{},
+	}
+	_, data, err = dag.Run(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func NewConditionalDagWithPipelines(orderType string, totalAmount float64) (steps.DagInterface, error) {
+	dag := steps.NewDag()
+	dag.SetName("Conditional Logic Example DAG")
+
+	// Create common steps
+	processOrder := NewStepProcessOrder()
+	applyDiscount := NewStepApplyDiscount()
+	calculateTax := NewStepCalculateTax()
+
+	digitalPipeline := steps.NewPipeline()
+	digitalPipeline.RunnableAdd(processOrder, applyDiscount, calculateTax)
+
+	physicalPipeline := steps.NewPipeline()
+	physicalPipeline.RunnableAdd(processOrder, applyDiscount, NewStepAddShipping(), calculateTax)
+
+	subscriptionPipeline := steps.NewPipeline()
+	subscriptionPipeline.RunnableAdd(processOrder, applyDiscount, calculateTax)
+
+	// Add shipping for physical orders
+	if orderType == "physical" {
+		dag.RunnableAdd(physicalPipeline)
+	} else if orderType == "subscription" {
+		dag.RunnableAdd(subscriptionPipeline)
+	} else if orderType == "digital" {
+		dag.RunnableAdd(digitalPipeline)
+	} else {
+		return nil, errors.New("invalid order type")
+	}
+
+	return dag, nil
+}
+
+func RunConditionalExampleWithPipelines(orderType string, totalAmount float64) (map[string]any, error) {
+	dag, err := NewConditionalDagWithPipelines(orderType, totalAmount)
 	if err != nil {
 		return nil, err
 	}
