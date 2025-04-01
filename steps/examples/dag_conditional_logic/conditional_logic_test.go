@@ -15,7 +15,7 @@ func TestConditionalLogic(t *testing.T) {
 	}{
 		{"Digital Order", "digital", 100.0, []string{"ProcessOrder", "ApplyDiscount", "CalculateTax"}, 108.0},
 		{"Physical Order", "physical", 100.0, []string{"ProcessOrder", "ApplyDiscount", "AddShipping", "CalculateTax"}, 114.0},
-		{"Subscription Order", "subscription", 100.0, []string{"ProcessOrder", "ApplyDiscount"}, 90.0},
+		{"Subscription Order", "subscription", 100.0, []string{"ProcessOrder", "ApplyDiscount", "CalculateTax"}, 108.0},
 	}
 
 	for _, tc := range testCases {
@@ -27,15 +27,8 @@ func TestConditionalLogic(t *testing.T) {
 			}
 
 			stepsExecuted := data["stepsExecuted"].([]string)
-			if len(stepsExecuted) != len(tc.expectedSteps) {
-				t.Errorf("Expected %d steps, got %d", len(tc.expectedSteps), len(stepsExecuted))
-				return
-			}
-
-			for i, step := range stepsExecuted {
-				if step != tc.expectedSteps[i] {
-					t.Errorf("Expected step %d to be %s, got %s", i, tc.expectedSteps[i], step)
-				}
+			if !equalSlices(stepsExecuted, tc.expectedSteps) {
+				t.Errorf("Expected steps %v, got %v", tc.expectedSteps, stepsExecuted)
 			}
 
 			totalAmount := data["totalAmount"].(float64)

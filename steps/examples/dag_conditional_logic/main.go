@@ -7,14 +7,17 @@ import (
 
 func main() {
 	// Create and run DAG
-	dag := NewConditionalDag("standard", 100.0)
-	ctx := context.Background()
-	data := map[string]any{
-		"orderType":      "standard",
-		"totalAmount":    100.0,
-		"stepsExecuted": []string{},
+	dag, err := NewConditionalDag("standard", 100.0)
+	if err != nil {
+		fmt.Printf("Error creating DAG: %v\n", err)
+		return
 	}
-	_, data, err := dag.Run(ctx, data)
+
+	_, data, err := dag.Run(context.Background(), map[string]any{
+		"orderType":     "standard",
+		"totalAmount":   100.0,
+		"stepsExecuted": []string{},
+	})
 	if err != nil {
 		fmt.Printf("Error running DAG: %v\n", err)
 		return

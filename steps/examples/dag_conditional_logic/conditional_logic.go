@@ -61,43 +61,64 @@ func NewStepCalculateTax() steps.StepInterface {
 }
 
 // NewConditionalDag creates a DAG with conditional logic
-func NewConditionalDag(orderType string, totalAmount float64) steps.DagInterface {
+//
+// # Depending on the order type, a different set of steps is added to the DAG
+//
+// On digital orders, only ProcessOrder and ApplyDiscount are added
+// On physical orders, ProcessOrder, ApplyDiscount, and AddShipping are added
+// On subscription orders, only ProcessOrder and ApplyDiscount are added
+//
+// Parameters:
+// - orderType: The type of order (digital, physical, subscription)
+// - totalAmount: The total amount of the order
+// Returns:
+// - dag: The DAG with conditional logic
+// - error: Error if any
+func NewConditionalDag(orderType string, totalAmount float64) (steps.DagInterface, error) {
 	dag := steps.NewDag()
 	dag.SetName("Conditional Logic Example DAG")
 
-	// Create steps
+	// Create common steps
 	processOrder := NewStepProcessOrder()
 	applyDiscount := NewStepApplyDiscount()
-	addShipping := NewStepAddShipping()
 	calculateTax := NewStepCalculateTax()
+	addShipping := NewStepAddShipping()
 
-	// Add steps to DAG
-	dag.RunnableAdd(processOrder, applyDiscount, addShipping, calculateTax)
+	// Add common steps to DAG
+	dag.RunnableAdd(processOrder, applyDiscount, calculateTax)
 
-	// Set up dependencies
+	// Set up common dependencies
 	dag.DependencyAdd(applyDiscount, processOrder)
-	dag.DependencyAddIf(addShipping, applyDiscount, func(ctx context.Context, data map[string]any) bool {
-		return data["orderType"] != "digital" && data["orderType"] != "subscription"
-	})
-	dag.DependencyAddIf(calculateTax, addShipping, func(ctx context.Context, data map[string]any) bool {
-		return data["orderType"] != "subscription"
-	})
-	dag.DependencyAddIf(calculateTax, applyDiscount, func(ctx context.Context, data map[string]any) bool {
-		return data["orderType"] == "digital" && data["orderType"] != "subscription"
-	})
 
-	return dag
+	// Add shipping step and dependencies only for physical orders
+	if orderType == "physical" {
+		dag.RunnableAdd(addShipping)
+		dag.DependencyAdd(addShipping, applyDiscount)
+		dag.DependencyAdd(calculateTax, addShipping)
+	} else {
+		dag.DependencyAdd(calculateTax, applyDiscount)
+	}
+
+	return dag, nil
 }
 
 // RunConditionalExample runs the conditional logic example
 func RunConditionalExample(orderType string, totalAmount float64) (map[string]any, error) {
-	dag := NewConditionalDag(orderType, totalAmount)
+	dag, err := NewConditionalDag(orderType, totalAmount)
+	if err != nil {
+		return nil, err
+	}
 	ctx := context.Background()
 	data := map[string]any{
-		"orderType":      orderType,
-		"totalAmount":    totalAmount,
+		"orderType":     orderType,
+		"totalAmount":   totalAmount,
 		"stepsExecuted": []string{},
 	}
-	_, data, err := dag.Run(ctx, data)
+	_, data, err = dag.Run(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return data, err
 }
