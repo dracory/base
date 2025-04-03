@@ -558,11 +558,6 @@ package str
 // 	return false
 // }
 
-// // String returns the string value.
-// func (s *String) String() string {
-// 	return s.value
-// }
-
 // // Studly returns the String instance in studly case.
 // func (s *String) Studly() *String {
 // 	words := fieldsFunc(s.value, func(r rune) bool {
@@ -628,37 +623,12 @@ package str
 // 	return s
 // }
 
-// // UcFirst returns the String instance with the first character uppercased.
-// func (s *String) UcFirst() *String {
-// 	if s.Length() == 0 {
-// 		return s
-// 	}
-// 	s.value = strings.ToUpper(Substr(s.value, 0, 1)) + Substr(s.value, 1)
-// 	return s
-// }
-
-// // UcSplit splits the string into words using uppercase characters as the delimiter.
-// func (s *String) UcSplit() []string {
-// 	words := fieldsFunc(s.value, func(r rune) bool {
-// 		return false
-// 	}, func(r rune) bool {
-// 		return unicode.IsUpper(r)
-// 	})
-// 	return words
-// }
-
 // // Unless returns the String instance with the given fallback applied if the given condition is false.
 // func (s *String) Unless(callback func(*String) bool, fallback func(*String) *String) *String {
 // 	if !callback(s) {
 // 		return fallback(s)
 // 	}
 
-// 	return s
-// }
-
-// // Upper returns the String instance in upper case.
-// func (s *String) Upper() *String {
-// 	s.value = strings.ToUpper(s.value)
 // 	return s
 // }
 
@@ -743,27 +713,6 @@ package str
 // 	return s.When(s.Test(pattern), callback...)
 // }
 
-// // WordCount returns the number of words in the string.
-// func (s *String) WordCount() int {
-// 	return len(strings.Fields(s.value))
-// }
-
-// // Words return the String instance truncated to the given number of words.
-// func (s *String) Words(limit int, end ...string) *String {
-// 	defaultEnd := "..."
-// 	if len(end) > 0 {
-// 		defaultEnd = end[0]
-// 	}
-
-// 	words := strings.Fields(s.value)
-// 	if len(words) <= limit {
-// 		return s
-// 	}
-
-// 	s.value = strings.Join(words[:limit], " ") + defaultEnd
-// 	return s
-// }
-
 // func Random(length int) string {
 // 	b := make([]byte, length)
 // 	_, err := rand.Read(b)
@@ -776,46 +725,6 @@ package str
 // 	}
 
 // 	return string(b)
-// }
-
-// // Case2Camel
-// // DEPRECATED: Use str.Of(name).Studly().String() instead
-// func Case2Camel(name string) string {
-// 	names := strings.Split(name, "_")
-
-// 	var newName string
-// 	for _, item := range names {
-// 		buffer := NewBuffer()
-// 		for i, r := range item {
-// 			if i == 0 {
-// 				buffer.Append(unicode.ToUpper(r))
-// 			} else {
-// 				buffer.Append(r)
-// 			}
-// 		}
-
-// 		newName += buffer.String()
-// 	}
-
-// 	return newName
-// }
-
-// // Camel2Case
-// // DEPRECATED: Use str.Of(name).Snake().String() instead
-// func Camel2Case(name string) string {
-// 	buffer := NewBuffer()
-// 	for i, r := range name {
-// 		if unicode.IsUpper(r) {
-// 			if i != 0 {
-// 				buffer.Append('_')
-// 			}
-// 			buffer.Append(unicode.ToLower(r))
-// 		} else {
-// 			buffer.Append(r)
-// 		}
-// 	}
-
-// 	return buffer.String()
 // }
 
 // type Buffer struct {
