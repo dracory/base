@@ -4,9 +4,10 @@ import "unicode"
 
 // UcFirst convert first letter into upper.
 func UcFirst(str string) string {
-	for i, v := range str {
-		return string(unicode.ToUpper(v)) + str[i+1:]
+	if str == "" {
+		return ""
 	}
-
-	return ""
+	runes := []rune(str)
+	runes[0] = unicode.ToUpper(runes[0])
+	return string(runes)
 }
