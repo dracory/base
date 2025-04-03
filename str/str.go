@@ -31,12 +31,6 @@ package str
 // 	return &String{value: value}
 // }
 
-// // Append appends one or more strings to the current string.
-// func (s *String) Append(values ...string) *String {
-// 	s.value += strings.Join(values, "")
-// 	return s
-// }
-
 // // Basename returns the String instance with the basename of the current file path string,
 // // and trims the suffix based on the parameter(optional).
 // func (s *String) Basename(suffix ...string) *String {
@@ -66,16 +60,6 @@ package str
 // // Camel returns the String instance in camel case.
 // func (s *String) Camel() *String {
 // 	return s.Studly().LcFirst()
-// }
-
-// // CharAt returns the character at the specified index.
-// func (s *String) CharAt(index int) string {
-// 	length := len(s.value)
-// 	// return zero string when char doesn't exists
-// 	if index < 0 && index < -length || index > length-1 {
-// 		return ""
-// 	}
-// 	return Substr(s.value, index, 1)
 // }
 
 // // ChopEnd remove the given string(s) if it exists at the end of the haystack.
@@ -255,71 +239,6 @@ package str
 // 	return s
 // }
 
-// // Is returns true if the string matches any of the given patterns.
-// func (s *String) Is(patterns ...string) bool {
-// 	for _, pattern := range patterns {
-// 		if pattern == s.value {
-// 			return true
-// 		}
-
-// 		// Escape special characters in the pattern
-// 		pattern = regexp.QuoteMeta(pattern)
-
-// 		// Replace asterisks with regular expression wildcards
-// 		pattern = strings.ReplaceAll(pattern, `\*`, ".*")
-
-// 		// Create a regular expression pattern for matching
-// 		regexPattern := "^" + pattern + "$"
-
-// 		// Compile the regular expression
-// 		regex := regexp.MustCompile(regexPattern)
-
-// 		// Check if the value matches the pattern
-// 		if regex.MatchString(s.value) {
-// 			return true
-// 		}
-// 	}
-
-// 	return false
-// }
-
-// // IsEmpty returns true if the string is empty.
-// func (s *String) IsEmpty() bool {
-// 	return s.value == ""
-// }
-
-// // IsNotEmpty returns true if the string is not empty.
-// func (s *String) IsNotEmpty() bool {
-// 	return !s.IsEmpty()
-// }
-
-// // IsAscii returns true if the string contains only ASCII characters.
-// func (s *String) IsAscii() bool {
-// 	return s.IsMatch(`^[\x00-\x7F]+$`)
-// }
-
-// // IsMap returns true if the string is a valid Map.
-// func (s *String) IsMap() bool {
-// 	var obj map[string]interface{}
-// 	return json.Unmarshal([]byte(s.value), &obj) == nil
-// }
-
-// // IsSlice returns true if the string is a valid Slice.
-// func (s *String) IsSlice() bool {
-// 	var arr []interface{}
-// 	return json.Unmarshal([]byte(s.value), &arr) == nil
-// }
-
-// // IsUlid returns true if the string is a valid ULID.
-// func (s *String) IsUlid() bool {
-// 	return s.IsMatch(`^[0-9A-Z]{26}$`)
-// }
-
-// // IsUuid returns true if the string is a valid UUID.
-// func (s *String) IsUuid() bool {
-// 	return s.IsMatch(`(?i)^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-// }
-
 // // Kebab returns the String instance in kebab case.
 // func (s *String) Kebab() *String {
 // 	return s.Snake("-")
@@ -423,27 +342,15 @@ package str
 // 	return reg.FindAllString(s.value, -1)
 // }
 
-// // IsMatch returns true if the string matches any of the given patterns.
-// func (s *String) IsMatch(patterns ...string) bool {
-// 	for _, pattern := range patterns {
-// 		reg := regexp.MustCompile(pattern)
-// 		if reg.MatchString(s.value) {
-// 			return true
-// 		}
-// 	}
-
-// 	return false
-// }
-
 // // NewLine appends one or more new lines to the current string.
-// func (s *String) NewLine(count ...int) *String {
+// func NewLine(str string, count ...int) string {
 // 	if len(count) == 0 {
-// 		s.value += "\n"
-// 		return s
+// 		str += "\n"
+// 		return str
 // 	}
 
-// 	s.value += strings.Repeat("\n", count[0])
-// 	return s
+// 	str += strings.Repeat("\n", count[0])
+// 	return str
 // }
 
 // // PadBoth returns the String instance padded to the left and right sides of the given length.
@@ -674,12 +581,6 @@ package str
 // 	return s
 // }
 
-// // Substr returns the String instance starting at the given index with the specified length.
-// func (s *String) Substr(start int, length ...int) *String {
-// 	s.value = Substr(s.value, start, length...)
-// 	return s
-// }
-
 // // Swap replaces all occurrences of the search string with the given replacement string.
 // func (s *String) Swap(replacements map[string]string) *String {
 // 	if len(replacements) == 0 {
@@ -861,53 +762,6 @@ package str
 
 // 	s.value = strings.Join(words[:limit], " ") + defaultEnd
 // 	return s
-// }
-
-// // Substr returns a substring of a given string, starting at the specified index
-// // and with a specified length.
-// // It handles UTF-8 encoded strings.
-// func Substr(str string, start int, length ...int) string {
-// 	// Convert the string to a rune slice for proper handling of UTF-8 encoding.
-// 	runes := []rune(str)
-// 	strLen := utf8.RuneCountInString(str)
-// 	end := strLen
-// 	// Check if the start index is out of bounds.
-// 	if start >= strLen {
-// 		return ""
-// 	}
-
-// 	// If the start index is negative, count backwards from the end of the string.
-// 	if start < 0 {
-// 		start = strLen + start
-// 		if start < 0 {
-// 			start = 0
-// 		}
-// 	}
-
-// 	if len(length) > 0 {
-// 		if length[0] >= 0 {
-// 			end = start + length[0]
-// 		} else {
-// 			end = strLen + length[0]
-// 		}
-// 	}
-
-// 	// If the length is 0, return the substring from start to the end of the string.
-// 	if len(length) == 0 {
-// 		return string(runes[start:])
-// 	}
-
-// 	// Handle the case where lenArg is negative and less than start
-// 	if end < start {
-// 		return ""
-// 	}
-
-// 	if end > strLen {
-// 		end = strLen
-// 	}
-
-// 	// Return the substring.
-// 	return string(runes[start:end])
 // }
 
 // func Random(length int) string {
