@@ -23,6 +23,7 @@ func Slugify(s string, replaceWith rune) string {
 			{0x0061, 0x007A, 1}, // a-z
 		},
 	}
+
 	// Characters in these ranges will be ignored.
 	nop := []*unicode.RangeTable{
 		unicode.Mark,
@@ -63,7 +64,7 @@ func cyrillicToLatin(s string) string {
 		'Г': "G",
 		'Д': "D",
 		'Е': "E",
-		'Ж': "Zh",
+		'Ж': "ZH",
 		'З': "Z",
 		'И': "I",
 		'Й': "Y",
@@ -79,14 +80,14 @@ func cyrillicToLatin(s string) string {
 		'У': "U",
 		'Ф': "F",
 		'Х': "H",
-		'Ц': "Ts",
-		'Ч': "Ch",
-		'Ш': "Sh",
-		'Щ': "Sh",
+		'Ц': "TS",
+		'Ч': "CH",
+		'Ш': "SH",
+		'Щ': "SHT",
 		'Ъ': "A",
 		'Ь': "Y",
-		'Ю': "Yu",
-		'Я': "Ya",
+		'Ю': "YU",
+		'Я': "YA",
 		'а': "a",
 		'б': "b",
 		'в': "v",
@@ -120,11 +121,11 @@ func cyrillicToLatin(s string) string {
 	}
 
 	var buf bytes.Buffer
-	for _, c := range s {
-		if d, ok := sub[c]; ok {
-			buf.WriteString(d)
+	for _, r := range s {
+		if trans, ok := sub[r]; ok {
+			buf.WriteString(trans)
 		} else {
-			buf.WriteRune(c)
+			buf.WriteRune(r)
 		}
 	}
 	return buf.String()

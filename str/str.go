@@ -47,26 +47,6 @@ package str
 // 	return s
 // }
 
-// // Before returns the String instance with the substring before the first occurrence of the specified search string.
-// func (s *String) Before(search string) *String {
-// 	index := strings.Index(s.value, search)
-// 	if index != -1 {
-// 		s.value = s.value[:index]
-// 	}
-
-// 	return s
-// }
-
-// // BeforeLast returns the String instance with the substring before the last occurrence of the specified search string.
-// func (s *String) BeforeLast(search string) *String {
-// 	index := strings.LastIndex(s.value, search)
-// 	if index != -1 {
-// 		s.value = s.value[:index]
-// 	}
-
-// 	return s
-// }
-
 // // Between returns the String instance with the substring between the given start and end strings.
 // func (s *String) Between(start, end string) *String {
 // 	if start == "" || end == "" {
