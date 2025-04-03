@@ -38,6 +38,8 @@ func TestUcSplitMultipleUppercase(t *testing.T) {
 		{"ABC", []string{"A", "B", "C"}},
 		{"AaBbCc", []string{"Aa", "Bb", "Cc"}},
 		{"HelloABCWorld", []string{"Hello", "A", "B", "C", "World"}},
+		{"AAABBBCCC", []string{"A", "A", "A", "B", "B", "B", "C", "C", "C"}},
+		{"HelloAAABBBCCCWorld", []string{"Hello", "A", "A", "A", "B", "B", "B", "C", "C", "C", "World"}},
 	}
 
 	for _, tc := range testCases {
@@ -55,8 +57,10 @@ func TestUcSplitSpecialCases(t *testing.T) {
 		expected []string
 	}{
 		{"A1B2C3", []string{"A1", "B2", "C3"}},
-		{"1A2B3C", []string{"1A2B3C"}},
+		{"1A2B3C", []string{"1", "A2", "B3", "C"}},
 		{"A1B2C3D", []string{"A1", "B2", "C3", "D"}},
+		{"Hello123", []string{"Hello123"}},
+		{"123Hello", []string{"123", "Hello"}},
 	}
 
 	for _, tc := range testCases {
@@ -75,6 +79,8 @@ func TestUcSplitCyrillic(t *testing.T) {
 	}{
 		{"АаБбВв", []string{"Аа", "Бб", "Вв"}},
 		{"ПриветМир", []string{"Привет", "Мир"}},
+		{"ПриветМИР", []string{"Привет", "М", "И", "Р"}},
+		{"Привет мИр", []string{"Привет м", "Ир"}},
 	}
 
 	for _, tc := range testCases {
@@ -91,9 +97,11 @@ func TestUcSplitMixedCases(t *testing.T) {
 		input    string
 		expected []string
 	}{
-		{"HelloWorld123", []string{"HelloWorld123"}},
-		{"Hello123World", []string{"Hello123World"}},
-		{"HelloWorldABC", []string{"HelloWorldABC"}},
+		{"HelloWorld123", []string{"Hello", "World123"}},
+		{"Hello123World", []string{"Hello123", "World"}},
+		{"HelloWorldABC", []string{"Hello", "World", "A", "B", "C"}},
+		{"Hello123ABCWorld", []string{"Hello123", "A", "B", "C", "World"}},
+		{"HelloABC123World", []string{"Hello", "A", "B", "C123", "World"}},
 	}
 
 	for _, tc := range testCases {
