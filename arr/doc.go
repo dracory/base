@@ -1,4 +1,5 @@
-// Package arr contains functions to interact with arrays.
+// Package arr contains functions to interact with arrays, slices,
+// and sometimes maps.
 //
 // The package is imported like this:
 //
