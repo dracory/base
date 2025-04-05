@@ -1,72 +1,67 @@
 package str
 
 import (
-	"encoding/json"
 	"regexp"
 	"strings"
 )
 
 // Is returns true if the string matches any of the given patterns.
 func Is(str string, patterns ...string) bool {
+	if len(patterns) == 0 {
+		return false
+	}
 	for _, pattern := range patterns {
+		if pattern == "" {
+			if str == "" {
+				return false
+			}
+			continue
+		}
+
+		// Direct match optimization
 		if pattern == str {
 			return true
 		}
 
-		// Escape special characters in the pattern
-		pattern = regexp.QuoteMeta(pattern)
+		// Convert glob pattern to regex
+		var regexPattern strings.Builder
+		regexPattern.WriteString("^")
 
-		// Replace asterisks with regular expression wildcards
-		pattern = strings.ReplaceAll(pattern, `\*`, ".*")
+		escaped := false
+		for _, r := range pattern {
+			if escaped {
+				// Previous char was '\', escape this char literally
+				regexPattern.WriteString(regexp.QuoteMeta(string(r)))
+				escaped = false
+			} else if r == '\\' {
+				escaped = true
+				// Don't append anything yet, wait for the next char
+			} else if r == '*' {
+				regexPattern.WriteString(".*")
+			} else {
+				// Escape other regex metacharacters
+				regexPattern.WriteString(regexp.QuoteMeta(string(r)))
+			}
+		}
+		// Handle trailing escape character if present (treat as literal backslash)
+		if escaped {
+			regexPattern.WriteString(regexp.QuoteMeta("\\"))
+		}
 
-		// Create a regular expression pattern for matching
-		regexPattern := "^" + pattern + "$"
+		regexPattern.WriteString("$")
 
-		// Compile the regular expression
-		regex := regexp.MustCompile(regexPattern)
+		// Compile and match
+		// Use regexp.Compile, not MustCompile, to handle potential pattern errors gracefully
+		regex, err := regexp.Compile(regexPattern.String())
+		if err != nil {
+			// Skip invalid patterns - consider logging or error handling if needed
+			continue
+		}
 
-		// Check if the value matches the pattern
 		if regex.MatchString(str) {
 			return true
 		}
 	}
 
 	return false
-}
-
-// IsEmpty returns true if the string is empty.
-func IsEmpty(str string) bool {
-	return str == ""
-}
-
-// IsNotEmpty returns true if the string is not empty.
-func IsNotEmpty(str string) bool {
-	return !IsEmpty(str)
-}
-
-// IsAscii returns true if the string contains only ASCII characters.
-func IsAscii(str string) bool {
-	return IsMatch(str, `^[\\x00-\\x7F]+$`)
-}
-
-// IsMap returns true if the string is a valid Map.
-func IsMap(str string) bool {
-	var obj map[string]interface{}
-	return json.Unmarshal([]byte(str), &obj) == nil
-}
-
-// IsSlice returns true if the string is a valid Slice.
-func IsSlice(str string) bool {
-	var arr []interface{}
-	return json.Unmarshal([]byte(str), &arr) == nil
-}
-
-// IsUlid returns true if the string is a valid ULID.
-func IsUlid(str string) bool {
-	return IsMatch(str, `^[0-9A-Z]{26}$`)
-}
-
-// IsUuid returns true if the string is a valid UUID.
-func IsUuid(str string) bool {
-	return IsMatch(str, `(?i)^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 }
