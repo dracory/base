@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 // ToHtml converts a markdown text to html
@@ -23,12 +25,14 @@ func MarkdownToHtml(text string) (string, error) {
 	var buf bytes.Buffer
 
 	md := goldmark.New(
-		// goldmark.WithExtensions(extension.GFM),
+		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
 		),
 		goldmark.WithRendererOptions(
-		// html.WithHardWraps(),			html.WithXHTML(),
+			html.WithXHTML(),
+			html.WithUnsafe(),
+			html.WithHardWraps(),
 		),
 	)
 	if err := md.Convert([]byte(text), &buf); err != nil {
