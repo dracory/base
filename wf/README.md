@@ -18,6 +18,8 @@ The Dag (Directed Acyclic Graph) type is used for advanced workflow management w
 - **Cycle Detection**: Automatically detects and prevents circular dependencies
 - **Context Management**: Share data between steps using a context object
 - **Error Handling**: Proper error propagation through the entire workflow
+- **State Management**: Track and persist workflow execution state
+- **Pause and Resume**: Ability to pause, save, and resume workflow execution
 - **Testable**: Designed with testing in mind
 
 ## Core Components
@@ -25,6 +27,7 @@ The Dag (Directed Acyclic Graph) type is used for advanced workflow management w
 - [Step](https://github.com/dracory/base/blob/main/wf/step.go): Represents a single execution step with unique ID, name, and execution handler
 - [Pipeline](https://github.com/dracory/base/blob/main/wf/pipeline.go): Groups related steps into a logical unit that can be treated as a single step
 - [Dag](https://github.com/dracory/base/blob/main/wf/dag.go): Manages a collection of steps and their dependencies, executing them in the correct order
+- [State](https://github.com/dracory/base/blob/main/wf/state.go): Manages workflow execution state, including status, completed steps, and workflow data
 
 ## Component Hierarchy
 
@@ -38,6 +41,7 @@ Runnable
 ## Usage Examples
 
 ### Creating Steps
+
 ```go
 // Create a step with an execution function
 step := NewStep()
@@ -49,6 +53,7 @@ step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context,
 ```
 
 ### Creating a Pipeline
+
 ```go
 // Create steps for a pipeline
 step1 := NewStep()
@@ -76,6 +81,7 @@ pipeline.RunnableAdd(step1, step2)
 ```
 
 ### Creating a DAG
+
 ```go
 // Create a DAG
 dag := NewDag()
@@ -89,6 +95,7 @@ dag.DependencyAdd(step2, step1) // step2 depends on step1
 ```
 
 ### Using a Pipeline in a DAG
+
 ```go
 // Create a pipeline with steps
 pipeline := NewPipeline()
@@ -110,6 +117,7 @@ dag.DependencyAdd(step3, pipeline)
 ```
 
 ### Executing Steps
+
 ```go
 // Create a context and data map
 ctx := context.Background()
@@ -122,9 +130,50 @@ if err != nil {
 }
 ```
 
+### State Management
+
+```go
+// Create a workflow
+dag := NewDag()
+dag.SetName("My Workflow")
+
+// Add steps and dependencies...
+
+// Start workflow
+ctx := context.Background()
+data := make(map[string]any)
+ctx, data, err := dag.Run(ctx, data)
+
+// Pause workflow
+if err := dag.Pause(); err != nil {
+    // Handle error
+}
+
+// Save state
+state := dag.GetState()
+stateJSON, err := state.ToJSON()
+if err != nil {
+    // Handle error
+}
+
+// Create new workflow instance
+newDag := NewDag()
+
+// Load saved state
+newState := NewState()
+if err := newState.FromJSON(stateJSON); err != nil {
+    // Handle error
+}
+newDag.SetState(newState)
+
+// Resume workflow
+ctx, data, err = newDag.Resume(ctx, data)
+```
+
 ## Testing
 
 The package includes comprehensive tests that verify:
+
 - Successful step execution
 - Error propagation
 - Dependency handling
@@ -132,6 +181,8 @@ The package includes comprehensive tests that verify:
 - Cycle detection
 - Parallel execution
 - Serialization
+- State management
+- Pause and resume functionality
 
 ## Dependencies
 
@@ -146,37 +197,52 @@ The package includes comprehensive tests that verify:
 5. Avoid creating circular dependencies between steps
 6. Use pipelines to group related steps into logical units
 7. Implement proper error handling in each step
+8. Save workflow state at appropriate points for recovery
+9. Use the state management features for long-running workflows
 
 ## Examples
 
 The package includes several examples demonstrating different use cases:
 
 ### Basic Usage Example
+
 - Shows how to create and execute simple steps
 - Demonstrates basic step dependencies
 - Location: [examples/dag_basic_usage](examples/dag_basic_usage)
 
 ### Conditional Logic Example
+
 - Demonstrates how to implement conditional logic using DAGs and pipelines
 - Shows different step chains for different scenarios
 - Location: [examples/dag_conditional_logic](examples/dag_conditional_logic)
 
 ### Dependencies Example
+
 - Shows how to create steps with complex dependencies
 - Demonstrates proper execution order through dependencies
 - Location: [examples/dag_dependencies](examples/dag_dependencies)
 
 ### Error Handling Example
+
 - Demonstrates error handling in a DAG
 - Shows how errors are propagated through the DAG
 - Location: [examples/dag_error_handling](examples/dag_error_handling)
 
+### State Management Example
+
+- Demonstrates workflow state management
+- Shows how to pause, save, and resume workflows
+- Location: [examples/dag_state](examples/dag_state)
+
 ## Error Handling
 
 The package will return errors in the following cases:
+
 - If a cycle is detected in the dependency graph
 - If any step execution fails
 - If a step is added multiple times
 - If dependencies are not properly defined
 - If pipeline execution fails
 - If conditional logic conditions are not met
+- If state management operations fail
+- If workflow cannot be paused or resumed

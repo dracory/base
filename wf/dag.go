@@ -2,7 +2,7 @@ package wf
 
 import (
 	"context"
-
+	"errors"
 	"slices"
 
 	"github.com/gouniverse/uid"
@@ -23,6 +23,9 @@ type Dag struct {
 
 	// dependencies (DependentID, DependencyIDs []string)
 	dependencies map[string][]string
+
+	// current state of the workflow
+	state StateInterface
 }
 
 // NewDag creates a new DAG
@@ -31,6 +34,7 @@ func NewDag() DagInterface {
 		runnableSequence: make([]string, 0),
 		runnables:        make(map[string]RunnableInterface),
 		dependencies:     make(map[string][]string),
+		state:            NewState(),
 	}
 	dag.SetName("New DAG")
 	dag.id = uid.HumanUid()
@@ -129,24 +133,155 @@ func (d *Dag) RunnableList() []RunnableInterface {
 
 // Run executes all nodes in the DAG in the correct order
 func (d *Dag) Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+	// If we have a saved state, use it
+	if d.state.GetStatus() == StateStatus(StateStatusPaused) {
+		return d.resumeFromState(ctx, data)
+	}
+
+	// Initialize new state
+	d.state = NewState()
+	d.state.SetStatus(StateStatus(StateStatusRunning))
+	d.state.SetWorkflowData(data)
+
 	// Build dependency graph
 	graph := buildDependencyGraph(d.runnables, d.dependencies)
 
 	// Get execution order
 	order, err := topologicalSort(graph)
 	if err != nil {
+		d.state.SetStatus(StateStatus(StateStatusFailed))
 		return ctx, data, err
 	}
 
 	// Execute steps in order
 	for _, node := range order {
+		// Skip completed steps
+		if slices.Contains(d.state.GetCompletedSteps(), node.GetID()) {
+			continue
+		}
+
+		// Update current step
+		d.state.SetCurrentStepID(node.GetID())
+
+		// Execute step
 		ctx, data, err = node.Run(ctx, data)
 		if err != nil {
+			d.state.SetStatus(StateStatus(StateStatusFailed))
 			return ctx, data, err
+		}
+
+		// Mark step as completed
+		d.state.AddCompletedStep(node.GetID())
+		d.state.SetWorkflowData(data)
+	}
+
+	d.state.SetStatus(StateStatus(StateStatusComplete))
+	return ctx, data, nil
+}
+
+// Pause pauses the workflow execution
+func (d *Dag) Pause() error {
+	if d.state.GetStatus() != StateStatus(StateStatusRunning) {
+		return errors.New("workflow is not running")
+	}
+	d.state.SetStatus(StateStatus(StateStatusPaused))
+	return nil
+}
+
+// Resume resumes the workflow execution from the last saved state
+func (d *Dag) Resume(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+	if d.state.GetStatus() != StateStatus(StateStatusPaused) {
+		return ctx, data, errors.New("workflow is not paused")
+	}
+	return d.resumeFromState(ctx, data)
+}
+
+// resumeFromState resumes the workflow from the saved state
+func (d *Dag) resumeFromState(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
+	// Update data with saved state
+	savedData := d.state.GetWorkflowData()
+	for k, v := range savedData {
+		data[k] = v
+	}
+
+	// Build dependency graph
+	graph := buildDependencyGraph(d.runnables, d.dependencies)
+
+	// Get execution order
+	order, err := topologicalSort(graph)
+	if err != nil {
+		d.state.SetStatus(StateStatus(StateStatusFailed))
+		return ctx, data, err
+	}
+
+	// Find the current step
+	currentStepID := d.state.GetCurrentStepID()
+	var currentStepIndex int
+	for i, node := range order {
+		if node.GetID() == currentStepID {
+			currentStepIndex = i
+			break
 		}
 	}
 
+	// Execute remaining steps
+	d.state.SetStatus(StateStatus(StateStatusRunning))
+	for i := currentStepIndex; i < len(order); i++ {
+		node := order[i]
+
+		// Skip completed steps
+		if slices.Contains(d.state.GetCompletedSteps(), node.GetID()) {
+			continue
+		}
+
+		// Update current step
+		d.state.SetCurrentStepID(node.GetID())
+
+		// Execute step
+		ctx, data, err = node.Run(ctx, data)
+		if err != nil {
+			d.state.SetStatus(StateStatus(StateStatusFailed))
+			return ctx, data, err
+		}
+
+		// Mark step as completed
+		d.state.AddCompletedStep(node.GetID())
+		d.state.SetWorkflowData(data)
+	}
+
+	d.state.SetStatus(StateStatus(StateStatusComplete))
 	return ctx, data, nil
+}
+
+// GetState returns the current workflow state
+func (d *Dag) GetState() StateInterface {
+	return d.state
+}
+
+// SetState sets the workflow state
+func (d *Dag) SetState(state StateInterface) {
+	d.state = state
+}
+
+// State helper methods
+func (d *Dag) IsRunning() bool {
+	return d.state.GetStatus() == StateStatusRunning
+}
+
+func (d *Dag) IsPaused() bool {
+	return d.state.GetStatus() == StateStatusPaused
+}
+
+func (d *Dag) IsCompleted() bool {
+	return d.state.GetStatus() == StateStatusComplete
+}
+
+func (d *Dag) IsFailed() bool {
+	return d.state.GetStatus() == StateStatusFailed
+}
+
+func (d *Dag) IsWaiting() bool {
+	return d.state.GetStatus() == "" // Initial state before running
 }
 
 // DependencyAdd adds a dependency between two nodes.

@@ -18,6 +18,13 @@ type RunnableInterface interface {
 	GetName() string
 	SetName(name string)
 	Run(ctx context.Context, data map[string]any) (context.Context, map[string]any, error)
+
+	// State helper methods
+	IsRunning() bool
+	IsPaused() bool
+	IsCompleted() bool
+	IsFailed() bool
+	IsWaiting() bool
 }
 
 // StepInterface represents a single node in a Pipeline, Workflow or DAG.
@@ -32,6 +39,18 @@ type StepInterface interface {
 
 	// SetHandler allows setting or modifying the step's execution logic.
 	SetHandler(handler StepHandler)
+
+	// Pause pauses the workflow execution
+	Pause() error
+
+	// Resume resumes the workflow execution from the last saved state
+	Resume(ctx context.Context, data map[string]any) (context.Context, map[string]any, error)
+
+	// GetState returns the current workflow state
+	GetState() StateInterface
+
+	// SetState sets the workflow state
+	SetState(state StateInterface)
 }
 
 // DagInterface represents a Directed Acyclic Graph (DAG) of steps that can be executed in a specific order.
@@ -59,10 +78,21 @@ type DagInterface interface {
 	// DependencyList returns all dependencies for a given node.
 	// The actual dependencies may vary based on the context and any conditional dependencies.
 	DependencyList(ctx context.Context, node RunnableInterface, data map[string]any) []RunnableInterface
+
+	// Pause pauses the workflow execution
+	Pause() error
+
+	// Resume resumes the workflow execution from the last saved state
+	Resume(ctx context.Context, data map[string]any) (context.Context, map[string]any, error)
+
+	// GetState returns the current workflow state
+	GetState() StateInterface
+
+	// SetState sets the workflow state
+	SetState(state StateInterface)
 }
 
-// PipelineInterface represents a sequence of runnable nodes
-// that will be executed in the sequence they are added.
+// PipelineInterface defines the interface for a pipeline
 type PipelineInterface interface {
 	RunnableInterface
 
@@ -75,4 +105,16 @@ type PipelineInterface interface {
 	// RunnableList returns all runnable nodes in the pipeline.
 	// The order of nodes in the returned slice is the order they were added.
 	RunnableList() []RunnableInterface
+
+	// Pause pauses the workflow execution
+	Pause() error
+
+	// Resume resumes the workflow execution from the last saved state
+	Resume(ctx context.Context, data map[string]any) (context.Context, map[string]any, error)
+
+	// GetState returns the current workflow state
+	GetState() StateInterface
+
+	// SetState sets the workflow state
+	SetState(state StateInterface)
 }
