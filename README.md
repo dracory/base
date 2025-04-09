@@ -35,6 +35,7 @@ The Dracory project is a Go framework that provides various utilities, including
 *   Date and datetime validation
 *   Web server functionality
 *   Command line functionality
+*   HTTP routing with middleware support
 
 ## Environment Variables
 
@@ -50,6 +51,87 @@ It offers a set of tools for interacting with various database systems.
 
 For more information, see the [database/README.md](database/README.md) file.
 
+## Router
+
+The router package provides a flexible and intuitive way to define HTTP routes in your application. It supports method chaining and includes shortcut methods for common HTTP methods.
+
+### Basic Usage
+
+```go
+package main
+
+import (
+	"net/http"
+
+	"github.com/dracory/base/router"
+)
+
+func main() {
+	// Create a new router
+	r := router.NewRouter()
+
+	// Define a handler function
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello, World!"))
+	}
+
+	// Create routes using shortcut methods
+	r.AddRoute(router.Get("/hello", handler))
+	r.AddRoute(router.Post("/submit", handler))
+	r.AddRoute(router.Put("/update", handler))
+	r.AddRoute(router.Delete("/remove", handler))
+
+	// You can also use the traditional method chaining approach
+	route := router.NewRoute().
+		SetMethod(http.MethodGet).
+		SetPath("/custom").
+		SetHandler(handler).
+		SetName("custom-route")
+
+	// Add middleware to routes
+	middleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Do something before the handler
+			next.ServeHTTP(w, r)
+			// Do something after the handler
+		})
+	}
+
+	r.AddBeforeMiddlewares([]router.Middleware{middleware})
+
+	// Start the server
+	http.ListenAndServe(":8080", r)
+}
+```
+
+### Available Shortcut Methods
+
+The router package provides the following shortcut methods for creating routes:
+
+- `Get(path string, handler Handler) RouteInterface` - Creates a GET route
+- `Post(path string, handler Handler) RouteInterface` - Creates a POST route
+- `Put(path string, handler Handler) RouteInterface` - Creates a PUT route
+- `Delete(path string, handler Handler) RouteInterface` - Creates a DELETE route
+
+These shortcut methods automatically set the HTTP method, path, and handler for the route, making your code more concise and readable.
+
+### Method Chaining
+
+All route methods support method chaining, allowing you to fluently configure your routes:
+
+```go
+route := router.NewRoute().
+	SetMethod(http.MethodGet).
+	SetPath("/users").
+	SetName("users-list").
+	SetHandler(userHandler).
+	AddBeforeMiddlewares([]router.Middleware{authMiddleware}).
+	AddAfterMiddlewares([]router.Middleware{logMiddleware})
+```
+
+This approach gives you full control over route configuration when needed.
+
+For more information, see the [router/README.md](router/README.md) file.
 
 ## Running a Web Server
 
@@ -84,3 +166,4 @@ func main() {
 		panic(err)
 	}
 }
+```

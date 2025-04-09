@@ -1,5 +1,7 @@
 package router
 
+import "net/http"
+
 // RouteImpl implements the RouteInterface
 // It represents a single route definition with its associated properties and middleware.
 // A route defines how a specific HTTP request should be handled, including the HTTP method,
@@ -108,4 +110,28 @@ func (r *routeImpl) AddAfterMiddlewares(middleware []Middleware) RouteInterface 
 // Returns a slice of Middleware functions in the order they will be executed.
 func (r *routeImpl) GetAfterMiddlewares() []Middleware {
 	return r.afterMiddlewares
+}
+
+// Get creates a new GET route with the given path and handler
+// It is a shortcut method that combines setting the method to GET, path, and handler.
+func Get(path string, handler Handler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodGet).SetPath(path).SetHandler(handler)
+}
+
+// Post creates a new POST route with the given path and handler
+// It is a shortcut method that combines setting the method to POST, path, and handler.
+func Post(path string, handler Handler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodPost).SetPath(path).SetHandler(handler)
+}
+
+// Put creates a new PUT route with the given path and handler
+// It is a shortcut method that combines setting the method to PUT, path, and handler.
+func Put(path string, handler Handler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodPut).SetPath(path).SetHandler(handler)
+}
+
+// Delete creates a new DELETE route with the given path and handler
+// It is a shortcut method that combines setting the method to DELETE, path, and handler.
+func Delete(path string, handler Handler) RouteInterface {
+	return NewRoute().SetMethod(http.MethodDelete).SetPath(path).SetHandler(handler)
 }

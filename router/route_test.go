@@ -208,3 +208,59 @@ func TestRouteWithMiddlewares(t *testing.T) {
 		t.Errorf("Expected 1 after middleware, got %d", len(route.GetAfterMiddlewares()))
 	}
 }
+
+// TestRouteShortcuts tests the shortcut methods for creating routes with different HTTP methods.
+// It verifies that each shortcut method correctly sets the method, path, and handler.
+func TestRouteShortcuts(t *testing.T) {
+	// Test handler for all routes
+	handler := func(w http.ResponseWriter, r *http.Request) {}
+	path := "/test"
+
+	// Test GET shortcut
+	getRoute := Get(path, handler)
+	if getRoute.GetMethod() != http.MethodGet {
+		t.Errorf("Expected GET method, got %s", getRoute.GetMethod())
+	}
+	if getRoute.GetPath() != path {
+		t.Errorf("Expected path %s, got %s", path, getRoute.GetPath())
+	}
+	if getRoute.GetHandler() == nil {
+		t.Error("Expected handler to be set, got nil")
+	}
+
+	// Test POST shortcut
+	postRoute := Post(path, handler)
+	if postRoute.GetMethod() != http.MethodPost {
+		t.Errorf("Expected POST method, got %s", postRoute.GetMethod())
+	}
+	if postRoute.GetPath() != path {
+		t.Errorf("Expected path %s, got %s", path, postRoute.GetPath())
+	}
+	if postRoute.GetHandler() == nil {
+		t.Error("Expected handler to be set, got nil")
+	}
+
+	// Test PUT shortcut
+	putRoute := Put(path, handler)
+	if putRoute.GetMethod() != http.MethodPut {
+		t.Errorf("Expected PUT method, got %s", putRoute.GetMethod())
+	}
+	if putRoute.GetPath() != path {
+		t.Errorf("Expected path %s, got %s", path, putRoute.GetPath())
+	}
+	if putRoute.GetHandler() == nil {
+		t.Error("Expected handler to be set, got nil")
+	}
+
+	// Test DELETE shortcut
+	deleteRoute := Delete(path, handler)
+	if deleteRoute.GetMethod() != http.MethodDelete {
+		t.Errorf("Expected DELETE method, got %s", deleteRoute.GetMethod())
+	}
+	if deleteRoute.GetPath() != path {
+		t.Errorf("Expected path %s, got %s", path, deleteRoute.GetPath())
+	}
+	if deleteRoute.GetHandler() == nil {
+		t.Error("Expected handler to be set, got nil")
+	}
+}

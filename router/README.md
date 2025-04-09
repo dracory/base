@@ -29,6 +29,13 @@ router := router.NewRouter()
 Individual route definitions that specify HTTP method, path, and handler.
 
 ```go
+// Using shortcut methods
+route := router.Get("/users", handleUsers)
+route := router.Post("/users", createUser)
+route := router.Put("/users/:id", updateUser)
+route := router.Delete("/users/:id", deleteUser)
+
+// Using method chaining
 route := router.NewRoute()
     .SetMethod("GET")
     .SetPath("/users")
@@ -52,13 +59,16 @@ group := router.NewGroup()
 ```go
 r := router.NewRouter()
 
-// Add a simple route
+// Add routes using shortcut methods
+r.AddRoute(router.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello, World!")
+}))
+
+// Add routes using method chaining
 r.AddRoute(router.NewRoute()
     .SetMethod("GET")
-    .SetPath("/hello")
-    .SetHandler(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Hello, World!")
-    }))
+    .SetPath("/users")
+    .SetHandler(handleUsers))
 ```
 
 ### Using Route Groups
@@ -127,6 +137,17 @@ Interface for configuring individual routes:
 - `GetHandler()` / `SetHandler()`: Route handler configuration
 - `GetName()` / `SetName()`: Route naming
 - `AddBeforeMiddlewares()` / `AddAfterMiddlewares()`: Route-specific middleware
+
+#### Shortcut Methods
+
+The package provides shortcut methods for common HTTP methods:
+
+- `Get(path string, handler Handler) RouteInterface` - Creates a GET route
+- `Post(path string, handler Handler) RouteInterface` - Creates a POST route
+- `Put(path string, handler Handler) RouteInterface` - Creates a PUT route
+- `Delete(path string, handler Handler) RouteInterface` - Creates a DELETE route
+
+These methods automatically set the HTTP method, path, and handler, making route creation more concise.
 
 ## Testing
 
