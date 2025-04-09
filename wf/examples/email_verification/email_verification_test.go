@@ -1,4 +1,4 @@
-package main_test
+package email_verification_test
 
 // import (
 // 	"context"
