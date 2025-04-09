@@ -186,7 +186,7 @@ func RunDagStateExample() error {
 	newDag.SetState(newState)
 
 	// Resume DAG
-	ctx, data, err = newDag.Resume(ctx, data)
+	_, _, err = newDag.Resume(ctx, data)
 	if err != nil {
 		return fmt.Errorf("DAG resume failed: %v", err)
 	}
