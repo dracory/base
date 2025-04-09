@@ -132,6 +132,12 @@ if err != nil {
 
 ### State Management
 
+The workflow package provides robust state management capabilities that allow
+you to track, save, and restore the execution state of any workflow.
+
+This is particularly useful for long-running workflows that may need to be
+paused, saved, and resumed later.
+
 ```go
 // Create a workflow
 dag := NewDag()
@@ -169,6 +175,50 @@ newDag.SetState(newState)
 // Resume workflow
 ctx, data, err = newDag.Resume(ctx, data)
 ```
+
+#### How State Management Works
+
+1. **State Tracking**: The workflow automatically tracks its execution state, including:
+
+   - Current status (Running, Paused, Complete, Failed)
+   - Completed steps
+   - Current step being executed
+   - Workflow data
+
+2. **State Transitions**: The workflow enforces valid state transitions:
+
+   - A workflow starts in the "Running" state
+   - A running workflow can transition to "Paused", "Complete", or "Failed"
+   - A paused workflow can only transition back to "Running"
+   - Completed or failed workflows are terminal states with no valid transitions
+
+3. **Pause and Resume**: You can pause a running workflow at any time:
+
+   - The `Pause()` method sets the state to "Paused"
+   - The `Resume()` method continues execution from where it was paused
+   - The workflow remembers which steps were completed
+
+4. **State Serialization**: The state can be serialized to JSON:
+
+   - `ToJSON()` converts the state to a JSON byte array
+   - `FromJSON()` loads a state from a JSON byte array
+   - This allows saving the state to a file or database
+
+5. **State Restoration**: You can restore a workflow to a previous state:
+
+   - Create a new workflow instance
+   - Load the saved state using `FromJSON()`
+   - Set the state using `SetState()`
+   - Resume execution using `Resume()`
+
+6. **Helper Methods**: The workflow provides helper methods to check the current state:
+   - `IsRunning()` - checks if the workflow is currently running
+   - `IsPaused()` - checks if the workflow is paused
+   - `IsCompleted()` - checks if the workflow has completed successfully
+   - `IsFailed()` - checks if the workflow has failed
+   - `IsWaiting()` - checks if the workflow is waiting to start
+
+This state management system enables robust workflow execution that can survive interruptions, system restarts, or distributed execution across multiple machines.
 
 ## Testing
 

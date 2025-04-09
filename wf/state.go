@@ -2,6 +2,7 @@ package wf
 
 import (
 	"encoding/json"
+	"slices"
 	"time"
 )
 
@@ -9,16 +10,22 @@ import (
 type StateInterface interface {
 	GetStatus() StateStatus
 	SetStatus(status StateStatus)
+
 	GetData() map[string]any
 	SetData(data map[string]any)
+
 	ToJSON() ([]byte, error)
 	FromJSON(data []byte) error
+
 	GetCurrentStepID() string
 	SetCurrentStepID(id string)
+
 	GetCompletedSteps() []string
 	AddCompletedStep(id string)
+
 	GetWorkflowData() map[string]any
 	SetWorkflowData(data map[string]any)
+
 	GetLastUpdated() time.Time
 	SetLastUpdated(t time.Time)
 }
@@ -49,8 +56,39 @@ func (s *State) GetStatus() StateStatus {
 
 // SetStatus sets the current status of the workflow
 func (s *State) SetStatus(status StateStatus) {
-	s.Status = status
-	s.LastUpdated = time.Now()
+	// Define valid state transitions
+	validTransitions := map[StateStatus][]StateStatus{
+		"":                  {StateStatusRunning},
+		StateStatusRunning:  {StateStatusPaused, StateStatusComplete, StateStatusFailed},
+		StateStatusPaused:   {StateStatusRunning},
+		StateStatusComplete: {}, // No valid transitions from complete
+		StateStatusFailed:   {}, // No valid transitions from failed
+	}
+
+	// Check if the transition is valid
+	currentStatus := s.Status
+	validNextStates, exists := validTransitions[currentStatus]
+
+	if !exists {
+		// If current status is not in the map, allow any transition (for backward compatibility)
+		s.Status = status
+		s.LastUpdated = time.Now()
+		return
+	}
+
+	// If there are no valid next states, don't allow any transition
+	if len(validNextStates) == 0 {
+		return
+	}
+
+	// Check if the requested transition is valid
+	if slices.Contains(validNextStates, status) {
+		s.Status = status
+		s.LastUpdated = time.Now()
+		return
+	}
+
+	// If we get here, the transition is not valid, so we don't change the state
 }
 
 // GetData returns the current data of the workflow
