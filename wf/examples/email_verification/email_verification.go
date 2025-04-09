@@ -7,6 +7,11 @@ import (
 	"github.com/dracory/base/wf"
 )
 
+// contextKey is a custom type for context keys
+type contextKey string
+
+const dagKey contextKey = "dag"
+
 // NewSendEmailStep creates a step that sends a verification email
 func NewSendEmailStep() wf.StepInterface {
 	step := wf.NewStep()
@@ -54,7 +59,7 @@ func NewVerifyCodeStep() wf.StepInterface {
 		enteredCode, ok := data["enteredCode"].(string)
 		if !ok {
 			// If no code entered yet, pause the workflow
-			if dag, ok := ctx.Value("dag").(wf.DagInterface); ok {
+			if dag, ok := ctx.Value(dagKey).(wf.DagInterface); ok {
 				if dag.IsRunning() {
 					if err := dag.Pause(); err != nil {
 						return ctx, data, fmt.Errorf("failed to pause workflow: %v", err)
@@ -124,7 +129,7 @@ func RunEmailVerificationExample() error {
 	// Initialize data
 	ctx := context.Background()
 	// Add the DAG to the context so the SendEmailStep can access it
-	ctx = context.WithValue(ctx, "dag", dag)
+	ctx = context.WithValue(ctx, dagKey, dag)
 	data := map[string]any{
 		"email": "user@example.com",
 	}
@@ -153,7 +158,7 @@ func RunEmailVerificationExample() error {
 	}
 	newDag.SetState(newState)
 
-	// Resume workflow
+	// Resume workflow with the updated context
 	_, _, err = newDag.Resume(ctx, data)
 	if err != nil {
 		return fmt.Errorf("workflow resume failed: %v", err)

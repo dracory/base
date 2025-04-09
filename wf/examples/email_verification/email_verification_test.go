@@ -14,7 +14,7 @@ func TestEmailVerificationWorkflow(t *testing.T) {
 	// Initialize data
 	ctx := context.Background()
 	// Add the DAG to the context so the SendEmailStep can access it
-	ctx = context.WithValue(ctx, "dag", dag)
+	ctx = context.WithValue(ctx, dagKey, dag)
 	data := map[string]any{
 		"email": "test@example.com",
 	}
@@ -64,7 +64,7 @@ func TestEmailVerificationWorkflow(t *testing.T) {
 	data["enteredCode"] = data["verificationCode"]
 
 	// Resume workflow
-	ctx, data, err = newDag.Resume(ctx, data)
+	_, _, err = newDag.Resume(ctx, data)
 	if err != nil {
 		t.Fatalf("workflow resume failed: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestEmailVerificationWorkflowInvalidCode(t *testing.T) {
 	// Initialize data
 	ctx := context.Background()
 	// Add the DAG to the context so the SendEmailStep can access it
-	ctx = context.WithValue(ctx, "dag", dag)
+	ctx = context.WithValue(ctx, dagKey, dag)
 	data := map[string]any{
 		"email": "test@example.com",
 	}
@@ -159,7 +159,7 @@ func TestEmailVerificationWorkflowE2E(t *testing.T) {
 			// Initialize data
 			ctx := context.Background()
 			// Add the DAG to the context so the SendEmailStep can access it
-			ctx = context.WithValue(ctx, "dag", dag)
+			ctx = context.WithValue(ctx, dagKey, dag)
 			data := map[string]any{
 				"email": tt.email,
 			}
@@ -215,7 +215,7 @@ func TestEmailVerificationWorkflowE2E(t *testing.T) {
 			data["enteredCode"] = data["verificationCode"]
 
 			// Resume workflow
-			ctx, data, err = newDag.Resume(ctx, data)
+			_, _, err = newDag.Resume(ctx, data)
 			if err != nil {
 				t.Fatalf("workflow resume failed: %v", err)
 			}
@@ -241,7 +241,7 @@ func TestEmailVerificationWorkflowPauseResume(t *testing.T) {
 	// Initialize data
 	ctx := context.Background()
 	// Add the DAG to the context so the SendEmailStep can access it
-	ctx = context.WithValue(ctx, "dag", dag)
+	ctx = context.WithValue(ctx, dagKey, dag)
 	data := map[string]any{
 		"email": "test@example.com",
 	}
@@ -291,7 +291,7 @@ func TestEmailVerificationWorkflowPauseResume(t *testing.T) {
 	data["enteredCode"] = data["verificationCode"]
 
 	// Resume workflow
-	ctx, data, err = newDag.Resume(ctx, data)
+	_, _, err = newDag.Resume(ctx, data)
 	if err != nil {
 		t.Fatalf("workflow resume failed: %v", err)
 	}
