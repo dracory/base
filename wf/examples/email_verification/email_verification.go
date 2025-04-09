@@ -117,7 +117,7 @@ func RunEmailVerificationExample() error {
 	}
 
 	// Pause the workflow after sending email
-	if dag.GetState().GetStatus() == wf.StateStatus(wf.StateStatusRunning) {
+	if dag.IsRunning() {
 		err = dag.Pause()
 		if err != nil {
 			return fmt.Errorf("failed to pause workflow: %v", err)
@@ -144,7 +144,7 @@ func RunEmailVerificationExample() error {
 	newDag.SetState(newState)
 
 	// Resume workflow
-	ctx, data, err = newDag.Resume(ctx, data)
+	_, _, err = newDag.Resume(ctx, data)
 	if err != nil {
 		return fmt.Errorf("workflow resume failed: %v", err)
 	}
