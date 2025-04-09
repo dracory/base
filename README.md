@@ -37,12 +37,19 @@ The Dracory project is a Go framework that provides various utilities, including
 *   Command line functionality
 *   HTTP routing with middleware support
 
+## Array
+
+The array package provides a comprehensive set of utilities for working with arrays, slices, and maps in Go.
+It offers functions for array manipulation, analysis, map operations, and iteration.
+
+For more information, see the [arr/README.md](arr/README.md) file.
+
 ## BBCode
 
 The bbkode package provides BBCode to HTML conversion functionality for the Dracory framework.
 It enables converting BBCode formatted text into clean, valid HTML output.
 
-For more information, see the [bbcode/README.md](bbcode/README.md) file.
+For more information, see the [bbkode/README.md](bbkode/README.md) file.
 
 ## Environment Variables
 
