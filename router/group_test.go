@@ -5,6 +5,9 @@ import (
 	"testing"
 )
 
+// TestGroupInterface tests the basic functionality of the GroupInterface implementation.
+// It verifies that the group can be created, and that its prefix, routes, and middleware
+// can be properly set and retrieved.
 func TestGroupInterface(t *testing.T) {
 	// Create a new group
 	group := NewGroup()
@@ -32,7 +35,7 @@ func TestGroupInterface(t *testing.T) {
 	route2 := NewRoute().SetMethod("POST").SetPath("/test2")
 	route3 := NewRoute().SetMethod("PUT").SetPath("/test3")
 	group.AddRoutes([]RouteInterface{route2, route3})
-	
+
 	if len(group.GetRoutes()) != 3 {
 		t.Errorf("Expected 3 routes, got %d", len(group.GetRoutes()))
 	}
@@ -64,10 +67,13 @@ func TestGroupInterface(t *testing.T) {
 	}
 }
 
+// TestGroupChaining tests the method chaining functionality of the GroupInterface.
+// It verifies that multiple methods can be called in sequence and that the group
+// state is correctly updated after each method call.
 func TestGroupChaining(t *testing.T) {
 	// Test method chaining
 	route := NewRoute().SetMethod("GET").SetPath("/users")
-	
+
 	group := NewGroup().
 		SetPrefix("/api").
 		AddRoute(route)
@@ -82,7 +88,7 @@ func TestGroupChaining(t *testing.T) {
 
 	// Test middleware chaining
 	middleware := func(next http.Handler) http.Handler { return next }
-	
+
 	group.AddBeforeMiddlewares([]Middleware{middleware}).
 		AddAfterMiddlewares([]Middleware{middleware})
 
@@ -95,6 +101,9 @@ func TestGroupChaining(t *testing.T) {
 	}
 }
 
+// TestNestedGroups tests the nested group functionality of the GroupInterface.
+// It verifies that groups can be nested within other groups and that the nested
+// groups can be properly accessed and manipulated.
 func TestNestedGroups(t *testing.T) {
 	// Create parent group
 	parentGroup := NewGroup().SetPrefix("/api")
@@ -139,27 +148,30 @@ func TestNestedGroups(t *testing.T) {
 	}
 }
 
+// TestGroupWithMiddlewares tests the middleware functionality of the GroupInterface.
+// It verifies that middleware functions can be added to a group and that they are
+// properly stored and can be retrieved.
 func TestGroupWithMiddlewares(t *testing.T) {
 	// Create a group with multiple middlewares
 	group := NewGroup().SetPrefix("/api")
 
 	// Create middlewares that modify a counter
 	counter := 0
-	
+
 	middleware1 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			counter += 1
 			next.ServeHTTP(w, r)
 		})
 	}
-	
+
 	middleware2 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			counter += 10
 			next.ServeHTTP(w, r)
 		})
 	}
-	
+
 	middleware3 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			counter += 100
@@ -181,86 +193,92 @@ func TestGroupWithMiddlewares(t *testing.T) {
 	}
 }
 
+// TestComplexGroupStructure tests the creation and manipulation of a complex nested group structure.
+// It verifies that groups can be nested at multiple levels and that the structure
+// can be properly traversed and verified.
 func TestComplexGroupStructure(t *testing.T) {
 	// Create a complex group structure with nested groups and routes
-	
+
 	// Main group
 	apiGroup := NewGroup().SetPrefix("/api")
-	
+
 	// Version groups
 	v1Group := NewGroup().SetPrefix("/v1")
 	v2Group := NewGroup().SetPrefix("/v2")
-	
+
 	// Resource groups
 	usersGroup := NewGroup().SetPrefix("/users")
 	productsGroup := NewGroup().SetPrefix("/products")
-	
+
 	// Add routes to resource groups
 	usersGroup.AddRoute(NewRoute().SetMethod("GET").SetPath(""))
 	usersGroup.AddRoute(NewRoute().SetMethod("GET").SetPath("/:id"))
 	usersGroup.AddRoute(NewRoute().SetMethod("POST").SetPath(""))
-	
+
 	productsGroup.AddRoute(NewRoute().SetMethod("GET").SetPath(""))
 	productsGroup.AddRoute(NewRoute().SetMethod("GET").SetPath("/:id"))
-	
+
 	// Add resource groups to version groups
 	v1Group.AddGroup(usersGroup)
 	v1Group.AddGroup(productsGroup)
-	
+
 	v2Group.AddGroup(usersGroup)
-	
+
 	// Add version groups to API group
 	apiGroup.AddGroup(v1Group)
 	apiGroup.AddGroup(v2Group)
-	
+
 	// Verify structure
 	if len(apiGroup.GetGroups()) != 2 {
 		t.Errorf("Expected API group to have 2 subgroups, got %d", len(apiGroup.GetGroups()))
 	}
-	
+
 	v1 := apiGroup.GetGroups()[0]
 	if v1.GetPrefix() != "/v1" {
 		t.Errorf("Expected first subgroup prefix /v1, got %s", v1.GetPrefix())
 	}
-	
+
 	if len(v1.GetGroups()) != 2 {
 		t.Errorf("Expected v1 group to have 2 subgroups, got %d", len(v1.GetGroups()))
 	}
-	
+
 	v2 := apiGroup.GetGroups()[1]
 	if v2.GetPrefix() != "/v2" {
 		t.Errorf("Expected second subgroup prefix /v2, got %s", v2.GetPrefix())
 	}
-	
+
 	if len(v2.GetGroups()) != 1 {
 		t.Errorf("Expected v2 group to have 1 subgroup, got %d", len(v2.GetGroups()))
 	}
-	
+
 	// Check users group in v1
 	usersInV1 := v1.GetGroups()[0]
 	if usersInV1.GetPrefix() != "/users" {
 		t.Errorf("Expected users group prefix /users, got %s", usersInV1.GetPrefix())
 	}
-	
+
 	if len(usersInV1.GetRoutes()) != 3 {
 		t.Errorf("Expected users group to have 3 routes, got %d", len(usersInV1.GetRoutes()))
 	}
-	
+
 	// Check products group in v1
 	productsInV1 := v1.GetGroups()[1]
 	if productsInV1.GetPrefix() != "/products" {
 		t.Errorf("Expected products group prefix /products, got %s", productsInV1.GetPrefix())
 	}
-	
+
 	if len(productsInV1.GetRoutes()) != 2 {
 		t.Errorf("Expected products group to have 2 routes, got %d", len(productsInV1.GetRoutes()))
 	}
 }
 
+// TestGroupWithDatabaseIntegration tests the integration of the GroupInterface with a simulated database.
+// It verifies that routes can be added to a group with handlers that would interact with a database,
+// and that the routes can be properly accessed and verified.
 func TestGroupWithDatabaseIntegration(t *testing.T) {
 	// Create a group for database-related routes
 	dbGroup := NewGroup().SetPrefix("/db")
-	
+
 	// Add routes for database operations
 	dbGroup.AddRoute(NewRoute().
 		SetMethod("GET").
@@ -268,39 +286,39 @@ func TestGroupWithDatabaseIntegration(t *testing.T) {
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			// In a real test, this would query a database
 		}))
-		
+
 	dbGroup.AddRoute(NewRoute().
 		SetMethod("POST").
 		SetPath("/execute").
 		SetHandler(func(w http.ResponseWriter, r *http.Request) {
 			// In a real test, this would execute a database command
 		}))
-		
+
 	// Verify the group structure
 	if dbGroup.GetPrefix() != "/db" {
 		t.Errorf("Expected group prefix /db, got %s", dbGroup.GetPrefix())
 	}
-	
+
 	if len(dbGroup.GetRoutes()) != 2 {
 		t.Errorf("Expected 2 routes, got %d", len(dbGroup.GetRoutes()))
 	}
-	
+
 	// Verify the first route
 	queryRoute := dbGroup.GetRoutes()[0]
 	if queryRoute.GetMethod() != "GET" {
 		t.Errorf("Expected query route method GET, got %s", queryRoute.GetMethod())
 	}
-	
+
 	if queryRoute.GetPath() != "/query" {
 		t.Errorf("Expected query route path /query, got %s", queryRoute.GetPath())
 	}
-	
+
 	// Verify the second route
 	executeRoute := dbGroup.GetRoutes()[1]
 	if executeRoute.GetMethod() != "POST" {
 		t.Errorf("Expected execute route method POST, got %s", executeRoute.GetMethod())
 	}
-	
+
 	if executeRoute.GetPath() != "/execute" {
 		t.Errorf("Expected execute route path /execute, got %s", executeRoute.GetPath())
 	}

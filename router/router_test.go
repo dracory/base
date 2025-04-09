@@ -7,6 +7,9 @@ import (
 	"testing"
 )
 
+// TestRouterBasicRouting tests the basic routing functionality of the Router.
+// It verifies that a simple route can be added and that requests to that route
+// are properly handled and return the expected response.
 func TestRouterBasicRouting(t *testing.T) {
 	router := NewRouter()
 
@@ -43,6 +46,9 @@ func TestRouterBasicRouting(t *testing.T) {
 	}
 }
 
+// TestRouterMethodNotAllowed tests the router's behavior when a request is made
+// with a method that is not allowed for a given path. It verifies that the router
+// returns the appropriate status code (404 Not Found in this implementation).
 func TestRouterMethodNotAllowed(t *testing.T) {
 	router := NewRouter()
 
@@ -74,6 +80,8 @@ func TestRouterMethodNotAllowed(t *testing.T) {
 	}
 }
 
+// TestRouterNotFound tests the router's behavior when a request is made to a path
+// that does not exist. It verifies that the router returns a 404 Not Found status code.
 func TestRouterNotFound(t *testing.T) {
 	router := NewRouter()
 
@@ -104,6 +112,9 @@ func TestRouterNotFound(t *testing.T) {
 	}
 }
 
+// TestRouterWithPrefix tests the router's prefix functionality. It verifies that
+// when a prefix is set on the router, all routes are properly prefixed and
+// requests to the prefixed paths are correctly handled.
 func TestRouterWithPrefix(t *testing.T) {
 	router := NewRouter().SetPrefix("/api")
 
@@ -140,6 +151,9 @@ func TestRouterWithPrefix(t *testing.T) {
 	}
 }
 
+// TestRouterWithGroup tests the router's group functionality. It verifies that
+// routes can be added to a group and that the group's prefix is properly applied
+// to all routes within the group.
 func TestRouterWithGroup(t *testing.T) {
 	router := NewRouter()
 
@@ -182,6 +196,9 @@ func TestRouterWithGroup(t *testing.T) {
 	}
 }
 
+// TestRouterWithNestedGroups tests the router's nested group functionality. It verifies
+// that groups can be nested within other groups and that the prefixes are properly
+// combined to form the full path for routes within nested groups.
 func TestRouterWithNestedGroups(t *testing.T) {
 	router := NewRouter()
 
@@ -230,6 +247,9 @@ func TestRouterWithNestedGroups(t *testing.T) {
 	}
 }
 
+// TestRouterWithBeforeMiddleware tests the router's before middleware functionality.
+// It verifies that middleware added to the router is executed before the route handler
+// and that it can modify the request or response as needed.
 func TestRouterWithBeforeMiddleware(t *testing.T) {
 	router := NewRouter()
 
@@ -282,6 +302,9 @@ func TestRouterWithBeforeMiddleware(t *testing.T) {
 	}
 }
 
+// TestRouterWithAfterMiddleware tests the router's after middleware functionality.
+// It verifies that middleware added to the router is executed after the route handler
+// and that it can modify the response as needed.
 func TestRouterWithAfterMiddleware(t *testing.T) {
 	router := NewRouter()
 
@@ -336,6 +359,9 @@ func TestRouterWithAfterMiddleware(t *testing.T) {
 	}
 }
 
+// TestRouterWithRouteMiddleware tests the middleware functionality at the route level.
+// It verifies that middleware can be added to a specific route and that it is executed
+// only for requests to that route.
 func TestRouterWithRouteMiddleware(t *testing.T) {
 	router := NewRouter()
 
@@ -388,6 +414,9 @@ func TestRouterWithRouteMiddleware(t *testing.T) {
 	}
 }
 
+// TestRouterWithGroupMiddleware tests the middleware functionality at the group level.
+// It verifies that middleware can be added to a group and that it is executed for
+// all requests to routes within that group.
 func TestRouterWithGroupMiddleware(t *testing.T) {
 	router := NewRouter()
 
@@ -444,6 +473,8 @@ func TestRouterWithGroupMiddleware(t *testing.T) {
 	}
 }
 
+// TestRouterStaticFiles tests the router's static file serving functionality.
+// It verifies that the router can serve static files from a specified directory.
 func TestRouterStaticFiles(t *testing.T) {
 	router := NewRouter()
 
@@ -458,7 +489,7 @@ func TestRouterStaticFiles(t *testing.T) {
 		}
 		fileServer.ServeHTTP(w, r)
 	}
-	
+
 	route := NewRoute().
 		SetMethod("GET").
 		SetPath("/static/*").
@@ -484,6 +515,9 @@ func TestRouterStaticFiles(t *testing.T) {
 	}
 }
 
+// TestRouterHTTPMethods tests the router's support for various HTTP methods.
+// It verifies that the router can handle requests with different HTTP methods
+// and that the appropriate handler is called for each method.
 func TestRouterHTTPMethods(t *testing.T) {
 	router := NewRouter()
 

@@ -5,6 +5,9 @@ import (
 	"testing"
 )
 
+// TestRouteInterface tests the basic functionality of the RouteInterface implementation.
+// It verifies that a route can be created, and that its method, path, name, handler, and middleware
+// can be properly set and retrieved.
 func TestRouteInterface(t *testing.T) {
 	// Create a new route
 	route := NewRoute()
@@ -64,6 +67,9 @@ func TestRouteInterface(t *testing.T) {
 	}
 }
 
+// TestRouteChaining tests the method chaining functionality of the RouteInterface.
+// It verifies that multiple methods can be called in sequence and that the route
+// state is correctly updated after each method call.
 func TestRouteChaining(t *testing.T) {
 	// Test method chaining
 	route := NewRoute().
@@ -90,7 +96,7 @@ func TestRouteChaining(t *testing.T) {
 
 	// Test middleware chaining
 	middleware := func(next http.Handler) http.Handler { return next }
-	
+
 	route.AddBeforeMiddlewares([]Middleware{middleware}).
 		AddAfterMiddlewares([]Middleware{middleware})
 
@@ -103,6 +109,9 @@ func TestRouteChaining(t *testing.T) {
 	}
 }
 
+// TestMultipleRoutes tests the creation and manipulation of multiple routes.
+// It verifies that multiple routes can be created independently and that modifications
+// to one route do not affect other routes.
 func TestMultipleRoutes(t *testing.T) {
 	// Create multiple routes and ensure they don't interfere with each other
 	route1 := NewRoute().
@@ -143,7 +152,7 @@ func TestMultipleRoutes(t *testing.T) {
 
 	// Modify route1 and ensure route2 is unaffected
 	route1.SetMethod("PUT")
-	
+
 	if route1.GetMethod() != "PUT" {
 		t.Errorf("Expected route1 method PUT, got %s", route1.GetMethod())
 	}
@@ -153,6 +162,9 @@ func TestMultipleRoutes(t *testing.T) {
 	}
 }
 
+// TestRouteWithMiddlewares tests the middleware functionality of the RouteInterface.
+// It verifies that middleware functions can be added to a route and that they are
+// properly stored and can be retrieved.
 func TestRouteWithMiddlewares(t *testing.T) {
 	// Create a route with multiple middlewares
 	route := NewRoute().
@@ -161,21 +173,21 @@ func TestRouteWithMiddlewares(t *testing.T) {
 
 	// Create middlewares that modify a counter
 	counter := 0
-	
+
 	middleware1 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			counter += 1
 			next.ServeHTTP(w, r)
 		})
 	}
-	
+
 	middleware2 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			counter += 10
 			next.ServeHTTP(w, r)
 		})
 	}
-	
+
 	middleware3 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			counter += 100
