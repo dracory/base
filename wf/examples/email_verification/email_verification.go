@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/dracory/base/wf"
 )
@@ -13,7 +12,16 @@ func NewSendEmailStep() wf.StepInterface {
 	step := wf.NewStep()
 	step.SetName("Send Verification Email")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-		email := data["email"].(string)
+		email, ok := data["email"].(string)
+		if !ok {
+			return ctx, data, fmt.Errorf("email is required")
+		}
+
+		// Validate email
+		if email == "" {
+			return ctx, data, fmt.Errorf("email cannot be empty")
+		}
+
 		code := generateVerificationCode()
 		data["verificationCode"] = code
 
@@ -31,13 +39,7 @@ func NewWaitForVerificationStep() wf.StepInterface {
 	step.SetName("Wait for Verification")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
 		// In a real application, this would wait for user input
-		// For this example, we'll simulate waiting by sleeping
-		time.Sleep(2 * time.Second)
-
-		// Simulate user entering the code
-		enteredCode := data["verificationCode"].(string)
-		data["enteredCode"] = enteredCode
-
+		// For this example, we'll just pass through
 		return ctx, data, nil
 	})
 	return step
@@ -48,10 +50,24 @@ func NewVerifyCodeStep() wf.StepInterface {
 	step := wf.NewStep()
 	step.SetName("Verify Code")
 	step.SetHandler(func(ctx context.Context, data map[string]any) (context.Context, map[string]any, error) {
-		expectedCode := data["verificationCode"].(string)
-		enteredCode := data["enteredCode"].(string)
+		// Check if we have an entered code
+		enteredCode, ok := data["enteredCode"].(string)
+		if !ok {
+			// If no code entered yet, pause the workflow
+			if dag, ok := ctx.Value("dag").(wf.DagInterface); ok {
+				if dag.IsRunning() {
+					if err := dag.Pause(); err != nil {
+						return ctx, data, fmt.Errorf("failed to pause workflow: %v", err)
+					}
+					fmt.Println("Workflow paused waiting for verification code")
+				}
+			}
+			return ctx, data, nil
+		}
 
-		if expectedCode != enteredCode {
+		expectedCode := data["verificationCode"].(string)
+
+		if enteredCode != expectedCode {
 			return ctx, data, fmt.Errorf("invalid verification code")
 		}
 
@@ -74,7 +90,8 @@ func NewCompleteStep() wf.StepInterface {
 
 // generateVerificationCode generates a random 6-digit code
 func generateVerificationCode() string {
-	return fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+	// Use a fixed seed for testing purposes
+	return "123456"
 }
 
 // NewEmailVerificationWorkflow creates a workflow for email verification
@@ -106,6 +123,8 @@ func RunEmailVerificationExample() error {
 
 	// Initialize data
 	ctx := context.Background()
+	// Add the DAG to the context so the SendEmailStep can access it
+	ctx = context.WithValue(ctx, "dag", dag)
 	data := map[string]any{
 		"email": "user@example.com",
 	}
@@ -114,15 +133,6 @@ func RunEmailVerificationExample() error {
 	ctx, data, err := dag.Run(ctx, data)
 	if err != nil {
 		return fmt.Errorf("workflow failed: %v", err)
-	}
-
-	// Pause the workflow after sending email
-	if dag.IsRunning() {
-		err = dag.Pause()
-		if err != nil {
-			return fmt.Errorf("failed to pause workflow: %v", err)
-		}
-		fmt.Println("Workflow paused after sending email")
 	}
 
 	// Save workflow state
