@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gouniverse/webserver"
 	"github.com/mingrammer/cfmt"
 )
 
@@ -61,7 +60,7 @@ var shutdownChan = make(chan os.Signal, 1)
 //
 // Returns:
 // - none
-func Start(options Options) (server *webserver.Server, err error) {
+func Start(options Options) (server *Server, err error) {
 	// Set default mode if not provided
 	if options.Mode == "" {
 		options.Mode = DefaultMode
@@ -84,7 +83,7 @@ func Start(options Options) (server *webserver.Server, err error) {
 	}
 
 	// Create a new web server
-	server = webserver.New(addr, options.Handler)
+	server = New(addr, options.Handler)
 
 	// Register shutdown signals
 	signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)

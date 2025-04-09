@@ -7,15 +7,19 @@ package router
 type routeImpl struct {
 	// method specifies the HTTP method for this route (e.g., "GET", "POST", "PUT", "DELETE")
 	method string
+
 	// path specifies the URL path pattern for this route (e.g., "/users", "/api/products")
 	path string
+
 	// handler is the function that will be called when this route is matched
 	handler Handler
+
 	// name is an optional identifier for this route, useful for route generation and debugging
 	name string
 
 	// beforeMiddlewares are middleware functions that will be executed before the route handler
 	beforeMiddlewares []Middleware
+
 	// afterMiddlewares are middleware functions that will be executed after the route handler
 	afterMiddlewares []Middleware
 }
