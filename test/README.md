@@ -44,19 +44,19 @@ The `test_key.go` file provides a utility for generating test keys:
 ```go
 import (
     "testing"
-    "github.com/dracory/base/testutils"
+    "github.com/dracory/base/test"
 )
 
 func TestSomething(t *testing.T) {
     // Create and customize a test configuration
     config := testutils.DefaultTestConfig()
     config.AppName = "My Test App"
-    
+
     // Set up the test environment
     testutils.SetupTestEnvironment(config)
-    
+
     // Run your tests...
-    
+
     // Clean up the test environment
     testutils.CleanupTestEnvironment(config)
 }
@@ -67,7 +67,7 @@ func TestSomething(t *testing.T) {
 ```go
 import (
     "testing"
-    "github.com/dracory/base/testutils"
+    "github.com/dracory/base/test"
 )
 
 func TestWithDatabase(t *testing.T) {
@@ -77,19 +77,19 @@ func TestWithDatabase(t *testing.T) {
         t.Fatalf("Failed to create test database: %v", err)
     }
     defer testutils.CloseTestDB(db)
-    
+
     // Create a test table
     err = testutils.CreateTestTable(db, "users", "id INTEGER PRIMARY KEY, name TEXT, email TEXT")
     if err != nil {
         t.Fatalf("Failed to create test table: %v", err)
     }
-    
+
     // Execute SQL
     err = testutils.ExecuteSQLWithArgs(db, "INSERT INTO users (name, email) VALUES (?, ?)", "Test User", "test@example.com")
     if err != nil {
         t.Fatalf("Failed to insert test data: %v", err)
     }
-    
+
     // Run your tests with the database...
 }
 ```
@@ -100,7 +100,7 @@ func TestWithDatabase(t *testing.T) {
 import (
     "net/http"
     "testing"
-    "github.com/dracory/base/testutils"
+    "github.com/dracory/base/test"
 )
 
 func TestHTTPEndpoint(t *testing.T) {
@@ -109,19 +109,19 @@ func TestHTTPEndpoint(t *testing.T) {
         w.WriteHeader(http.StatusOK)
         w.Write([]byte("Hello, world!"))
     })
-    
+
     // Create a request
-    req := testutils.NewTestHTTPRequest("GET", "/hello")
+    req := test.NewTestHTTPRequest("GET", "/hello")
         .WithHeader("X-Test", "test-value")
-    
+
     // Execute the request
     resp := req.Execute(handler)
-    
+
     // Check the response
     if resp.Code != http.StatusOK {
         t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.Code)
     }
-    
+
     if resp.Body.String() != "Hello, world!" {
         t.Errorf("Expected body %q, got %q", "Hello, world!", resp.Body.String())
     }
