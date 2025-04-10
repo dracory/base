@@ -1,17 +1,19 @@
 # Simple Workflow Package (SWF)
 
-This package provides a simple workflow management system in Go.
+This package provides a simple, linear workflow management system in Go. It is designed for straightforward, sequential workflows where steps are executed one after another in a predefined order.
 
 ## Overview
 
-The workflow package allows you to create and manage multi-step workflows. It provides functionality to:
+The workflow package allows you to create and manage linear, sequential workflows. It provides functionality to:
 
-- Create and manage steps in a workflow
+- Create and manage steps in a sequential workflow
 - Track the current step
 - Determine if steps are complete
 - Calculate workflow progress
 - Store and retrieve metadata for steps
 - Serialize and deserialize workflow state
+
+> **Note**: This is a simple linear workflow system. It does not support complex workflows with branching paths or DAGs (Directed Acyclic Graphs). Each step follows the previous one in a straightforward sequence.
 
 ## Components
 
@@ -47,10 +49,10 @@ import (
 )
 
 func main() {
-    // Create a new workflow
+    // Create a new linear workflow
     wf := workflow.NewWorkflow()
 
-    // Create steps
+    // Create steps in sequence
     step1 := workflow.NewStep("step1")
     step1.Title = "First Step"
     step1.Description = "This is the first step of the workflow"
@@ -59,10 +61,11 @@ func main() {
     step2.Title = "Second Step"
     step2.Description = "This is the second step of the workflow"
 
-    // Add steps to the workflow
+    // Add steps to the workflow in sequence
     wf.AddStep(step1)
     wf.AddStep(step2)
 
+    // Steps will be executed in the order they were added
     // Get the current step
     currentStep := wf.GetCurrentStep()
     fmt.Printf("Current step: %s\n", currentStep.Name)
@@ -81,15 +84,18 @@ func main() {
 }
 ```
 
-## Differences from PHP Implementation
+## When to Use This Package
 
-This Go implementation has some differences from the original PHP implementation:
+This package is ideal for:
 
-1. The `GetActionLink()` method in the `Step` struct is a simplified implementation, as the PHP version uses a framework-specific function.
-2. The `GetState()` method now returns the actual state struct instead of accessing a non-existent `memory` property.
-3. Error handling is more explicit in the Go version, with methods returning errors where appropriate.
-4. The Go version uses strong typing and interfaces to handle different parameter types.
+- Simple approval workflows
+- Sequential document processing
+- Step-by-step form completion
+- Linear business processes
 
-## License
+It is not suitable for:
 
-This code is a conversion of the Sinevia Workflow library. Please refer to the original license for usage terms.
+- Complex workflows with branching paths
+- DAG-based workflows
+- Parallel processing workflows
+- Workflows requiring conditional branching

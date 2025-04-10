@@ -8,7 +8,7 @@
 
 This project is dual-licensed under the following terms:
 
-- For non-commercial use, you may choose either the GNU Affero General Public License v3.0 (AGPLv3) *or* a separate commercial license (see below). You can find a copy of the AGPLv3 at: https://www.gnu.org/licenses/agpl-3.0.txt
+- For non-commercial use, you may choose either the GNU Affero General Public License v3.0 (AGPLv3) _or_ a separate commercial license (see below). You can find a copy of the AGPLv3 at: https://www.gnu.org/licenses/agpl-3.0.txt
 
 - For commercial use, a separate commercial license is required. Commercial licenses are available for various use cases. Please contact me via my [contact page](https://lesichkov.co.uk/contact) to obtain a commercial license.
 
@@ -18,24 +18,23 @@ This project is dual-licensed under the following terms:
 go get github.com/dracory/base
 ```
 
-
 ## About Dracory
 
 The Dracory project is a Go framework that provides various utilities, including:
 
-*   BBCode to HTML conversion
-*   Slice manipulation
-*   Database interaction
-*   Error handling and validation
-*   Image manipulation
-*   URL downloading
-*   QR code generation
-*   HTTP request handling
-*   Timezone conversion
-*   Date and datetime validation
-*   Web server functionality
-*   Command line functionality
-*   HTTP routing with middleware support
+- BBCode to HTML conversion
+- Slice manipulation
+- Database interaction
+- Error handling and validation
+- Image manipulation
+- URL downloading
+- QR code generation
+- HTTP request handling
+- Timezone conversion
+- Date and datetime validation
+- Web server functionality
+- Command line functionality
+- HTTP routing with middleware support
 
 ## Array
 
@@ -123,8 +122,17 @@ For more information, see the [tz/README.md](tz/README.md) file.
 
 ## Workflow
 
-The workflow package provides a flexible and extensible framework for defining and executing sequential operations.
-It enables creating complex workflows with steps, pipelines, and directed acyclic graphs (DAGs).
+The workflow package provides a flexible and extensible framework for defining
+and executing sequential operations.
+It enables creating complex workflows with steps, pipelines, and directed
+acyclic graphs (DAGs).
 
 For more information, see the [wf/README.md](wf/README.md) file.
 
+## Simple Workflow (SWF)
+
+The SWF package provides a simple, linear workflow management system.
+It is designed for straightforward, sequential workflows where steps are executed
+one after another in a predefined order.
+
+For more information, see the [swf/README.md](swf/README.md) file.
