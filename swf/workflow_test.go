@@ -13,8 +13,8 @@ func TestNewWorkflow(t *testing.T) {
 		t.Fatal("NewWorkflow() returned nil")
 	}
 
-	if wf.GetState().CurrentStep != "" {
-		t.Errorf("Expected empty CurrentStep, got %s", wf.GetState().CurrentStep)
+	if wf.GetState().CurrentStepName != "" {
+		t.Errorf("Expected empty CurrentStepName, got %s", wf.GetState().CurrentStepName)
 	}
 
 	state := wf.GetState()
@@ -36,19 +36,26 @@ func TestAddStep(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step := swf.NewStep("test_step")
 
-	wf.AddStep(step)
+	err := wf.AddStep(step)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	steps := wf.GetSteps()
 	if len(steps) != 1 {
 		t.Errorf("Expected 1 step, got %d", len(steps))
 	}
 
-	if steps["test_step"] != step {
+	if steps[0] != step {
 		t.Error("Step not added correctly")
 	}
 
-	if wf.GetState().CurrentStep != "test_step" {
-		t.Errorf("Expected CurrentStep to be 'test_step', got %s", wf.GetState().CurrentStep)
+	if wf.GetState().CurrentStepName != "test_step" {
+		t.Errorf("Expected CurrentStepName to be 'test_step', got %s", wf.GetState().CurrentStepName)
+	}
+
+	if wf.GetState().StepDetails["test_step"].Completed != "" {
+		t.Errorf("Expected Completed to be empty, got %s", wf.GetState().StepDetails["test_step"].Completed)
 	}
 }
 
@@ -63,7 +70,10 @@ func TestGetCurrentStep(t *testing.T) {
 
 	// Test with steps
 	step := swf.NewStep("test_step")
-	wf.AddStep(step)
+	err := wf.AddStep(step)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	currentStep = wf.GetCurrentStep()
 	if currentStep == nil {
@@ -81,16 +91,22 @@ func TestSetCurrentStep(t *testing.T) {
 	// Test with string
 	step1 := swf.NewStep("step1")
 	step2 := swf.NewStep("step2")
-	wf.AddStep(step1)
-	wf.AddStep(step2)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
-	err := wf.SetCurrentStep("step2")
+	err = wf.SetCurrentStep("step2")
 	if err != nil {
 		t.Errorf("SetCurrentStep failed: %v", err)
 	}
 
-	if wf.GetState().CurrentStep != "step2" {
-		t.Errorf("Expected CurrentStep to be 'step2', got %s", wf.GetState().CurrentStep)
+	if wf.GetState().CurrentStepName != "step2" {
+		t.Errorf("Expected CurrentStepName to be 'step2', got %s", wf.GetState().CurrentStepName)
 	}
 
 	// Test with Step pointer
@@ -99,8 +115,8 @@ func TestSetCurrentStep(t *testing.T) {
 		t.Errorf("SetCurrentStep failed: %v", err)
 	}
 
-	if wf.GetState().CurrentStep != "step1" {
-		t.Errorf("Expected CurrentStep to be 'step1', got %s", wf.GetState().CurrentStep)
+	if wf.GetState().CurrentStepName != "step1" {
+		t.Errorf("Expected CurrentStepName to be 'step1', got %s", wf.GetState().CurrentStepName)
 	}
 
 	// Test with invalid step
@@ -120,8 +136,14 @@ func TestIsStepCurrent(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step1 := swf.NewStep("step1")
 	step2 := swf.NewStep("step2")
-	wf.AddStep(step1)
-	wf.AddStep(step2)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Test with string
 	isCurrent := wf.IsStepCurrent("step1")
@@ -147,9 +169,18 @@ func TestIsStepComplete(t *testing.T) {
 	step1 := swf.NewStep("step1")
 	step2 := swf.NewStep("step2")
 	step3 := swf.NewStep("step3")
-	wf.AddStep(step1)
-	wf.AddStep(step2)
-	wf.AddStep(step3)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step3)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Initially, no steps should be complete
 	if wf.IsStepComplete(step1) {
@@ -157,7 +188,10 @@ func TestIsStepComplete(t *testing.T) {
 	}
 
 	// Move to step2
-	wf.SetCurrentStep(step2)
+	err = wf.SetCurrentStep(step2)
+	if err != nil {
+		t.Errorf("SetCurrentStep failed: %v", err)
+	}
 
 	// Now step1 should be complete
 	if !wf.IsStepComplete(step1) {
@@ -170,7 +204,10 @@ func TestIsStepComplete(t *testing.T) {
 	}
 
 	// Mark step2 as completed
-	wf.MarkStepAsCompleted(step2)
+	isMarked := wf.MarkStepAsCompleted(step2)
+	if !isMarked {
+		t.Error("Expected step2 to be marked as completed")
+	}
 
 	// Now step2 should be complete
 	if !wf.IsStepComplete(step2) {
@@ -188,9 +225,18 @@ func TestGetProgress(t *testing.T) {
 	step1 := swf.NewStep("step1")
 	step2 := swf.NewStep("step2")
 	step3 := swf.NewStep("step3")
-	wf.AddStep(step1)
-	wf.AddStep(step2)
-	wf.AddStep(step3)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step3)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Initially, 0 steps should be complete
 	progress := wf.GetProgress()
@@ -211,7 +257,10 @@ func TestGetProgress(t *testing.T) {
 	}
 
 	// Move to step2
-	wf.SetCurrentStep(step2)
+	err = wf.SetCurrentStep(step2)
+	if err != nil {
+		t.Errorf("SetCurrentStep failed: %v", err)
+	}
 
 	// Now 1 step should be complete
 	progress = wf.GetProgress()
@@ -229,7 +278,10 @@ func TestGetProgress(t *testing.T) {
 	}
 
 	// Mark step2 as completed
-	wf.MarkStepAsCompleted(step2)
+	isMarked := wf.MarkStepAsCompleted(step2)
+	if !isMarked {
+		t.Error("Expected step2 to be marked as completed")
+	}
 
 	// Now 2 steps should be complete
 	progress = wf.GetProgress()
@@ -248,8 +300,14 @@ func TestGetSteps(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step1 := swf.NewStep("step1")
 	step2 := swf.NewStep("step2")
-	wf.AddStep(step1)
-	wf.AddStep(step2)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	steps := wf.GetSteps()
 
@@ -257,11 +315,11 @@ func TestGetSteps(t *testing.T) {
 		t.Errorf("Expected 2 steps, got %d", len(steps))
 	}
 
-	if steps["step1"] != step1 {
+	if steps[0] != step1 {
 		t.Error("step1 not found in steps")
 	}
 
-	if steps["step2"] != step2 {
+	if steps[1] != step2 {
 		t.Error("step2 not found in steps")
 	}
 }
@@ -269,7 +327,10 @@ func TestGetSteps(t *testing.T) {
 func TestGetStep(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step1 := swf.NewStep("step1")
-	wf.AddStep(step1)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Test with existing step
 	step := wf.GetStep("step1")
@@ -287,7 +348,10 @@ func TestGetStep(t *testing.T) {
 func TestGetStepMeta(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step := swf.NewStep("test_step")
-	wf.AddStep(step)
+	err := wf.AddStep(step)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Test with no metadata
 	meta := wf.GetStepMeta(step, "key")
@@ -320,7 +384,10 @@ func TestGetStepMeta(t *testing.T) {
 func TestMarkStepAsCompleted(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step := swf.NewStep("test_step")
-	wf.AddStep(step)
+	err := wf.AddStep(step)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Test with non-existing step details
 	result := wf.MarkStepAsCompleted("non_existing")
@@ -357,7 +424,10 @@ func TestMarkStepAsCompleted(t *testing.T) {
 func TestSetStepMeta(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step := swf.NewStep("test_step")
-	wf.AddStep(step)
+	err := wf.AddStep(step)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Set metadata
 	wf.SetStepMeta(step, "key", "value")
@@ -400,20 +470,51 @@ func TestSetStepMeta(t *testing.T) {
 func TestGetState(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step := swf.NewStep("test_step")
-	wf.AddStep(step)
+	err := wf.AddStep(step)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	step2 := swf.NewStep("test_step2")
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	state := wf.GetState()
 
-	if state.CurrentStep != "test_step" {
-		t.Errorf("Expected CurrentStep to be 'test_step', got %s", state.CurrentStep)
+	if state.CurrentStepName != "test_step" {
+		t.Errorf("Expected CurrentStepName to be 'test_step', got %s", state.CurrentStepName)
+	}
+
+	if state.StepDetails["test_step"].Started == "" {
+		t.Errorf("Expected Started to not be empty, got %s", state.StepDetails["test_step"].Started)
+	}
+
+	if state.StepDetails["test_step"].Completed != "" {
+		t.Errorf("Expected Completed to be empty, got %s", state.StepDetails["test_step"].Completed)
 	}
 
 	if len(state.History) != 1 {
-		t.Errorf("Expected 1 history entry, got %d", len(state.History))
+		t.Errorf("Expected 1 history entry (current step, which has been started), got %d", len(state.History))
+	}
+
+	isMarked := wf.MarkStepAsCompleted(step)
+	if !isMarked {
+		t.Error("Expected step to be marked as completed")
+	}
+
+	state = wf.GetState()
+
+	if len(state.History) != 1 {
+		t.Errorf("Expected 1 history entry (current step, which has been completed), got %d", len(state.History))
 	}
 
 	if state.History[0] != "test_step" {
 		t.Errorf("Expected history entry to be 'test_step', got %s", state.History[0])
+	}
+
+	if state.StepDetails["test_step"].Completed == "" {
+		t.Errorf("Expected Completed to not be empty, got %s", state.StepDetails["test_step"].Completed)
 	}
 }
 
@@ -421,8 +522,14 @@ func TestToStringAndFromString(t *testing.T) {
 	wf := swf.NewWorkflow()
 	step1 := swf.NewStep("step1")
 	step2 := swf.NewStep("step2")
-	wf.AddStep(step1)
-	wf.AddStep(step2)
+	err := wf.AddStep(step1)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
+	err = wf.AddStep(step2)
+	if err != nil {
+		t.Errorf("AddStep failed: %v", err)
+	}
 
 	// Set some metadata
 	wf.SetStepMeta(step1, "key", "value")
@@ -441,8 +548,8 @@ func TestToStringAndFromString(t *testing.T) {
 	}
 
 	// Check if state is the same
-	if newWf.GetState().CurrentStep != wf.GetState().CurrentStep {
-		t.Errorf("Expected CurrentStep %s, got %s", wf.GetState().CurrentStep, newWf.GetState().CurrentStep)
+	if newWf.GetState().CurrentStepName != wf.GetState().CurrentStepName {
+		t.Errorf("Expected CurrentStepName %s, got %s", wf.GetState().CurrentStepName, newWf.GetState().CurrentStepName)
 	}
 
 	if len(newWf.GetState().History) != len(wf.GetState().History) {

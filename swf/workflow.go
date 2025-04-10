@@ -4,17 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/dracory/base/arr"
+	"github.com/samber/lo"
 )
 
 // StepDetails contains metadata about a step
 type StepDetails struct {
+	Started   string
 	Completed string
-	Meta      map[string]interface{}
+	Meta      map[string]any
 }
 
 // WorkflowState represents the current state of a workflow
 type WorkflowState struct {
-	CurrentStep string
+	CurrentStepName string
+	// History is the history of steps that have been completed
+	// and the current step, which has been started
 	History     []string
 	StepDetails map[string]*StepDetails
 }
@@ -30,14 +36,14 @@ type Progress struct {
 
 // Workflow represents a workflow
 type Workflow struct {
-	steps map[string]*Step
+	steps []*Step
 	state *WorkflowState
 }
 
 // NewWorkflow creates a new Workflow
 func NewWorkflow() *Workflow {
 	return &Workflow{
-		steps: make(map[string]*Step),
+		steps: make([]*Step, 0),
 		state: &WorkflowState{
 			History:     make([]string, 0),
 			StepDetails: make(map[string]*StepDetails),
@@ -46,104 +52,99 @@ func NewWorkflow() *Workflow {
 }
 
 // AddStep adds a step to the workflow
-func (w *Workflow) AddStep(step *Step) {
-	w.steps[step.Name] = step
-	if w.state.CurrentStep == "" {
-		w.state.CurrentStep = step.Name
-		// w.state.History = append(w.state.History, step.Name)
+//
+// Business logic:
+// 1. Check if step already exists
+// 2. Add step to steps map
+// 3. If first step, set it as current step
+// 4. Add step details to step details map
+func (w *Workflow) AddStep(step *Step) error {
+	if w.GetStep(step.Name) != nil {
+		return fmt.Errorf("step already exists: %s", step.Name)
 	}
-	if w.state.StepDetails[step.Name] == nil {
-		w.state.StepDetails[step.Name] = &StepDetails{
-			Meta: make(map[string]interface{}),
-		}
+
+	w.steps = append(w.steps, step)
+
+	w.state.StepDetails[step.Name] = &StepDetails{
+		Started:   "",
+		Completed: "",
+		Meta:      make(map[string]any),
 	}
+
+	// if first step becomes current step
+	if w.state.CurrentStepName == "" {
+		w.SetCurrentStep(step.Name)
+	}
+
+	return nil
 }
 
 // GetCurrentStep returns the current step
 func (w *Workflow) GetCurrentStep() *Step {
-	if w.state.CurrentStep == "" {
+	if w.state.CurrentStepName == "" {
 		return nil
 	}
-	return w.steps[w.state.CurrentStep]
+
+	return w.GetStep(w.state.CurrentStepName)
 }
 
-// SetCurrentStep sets the current step
-func (w *Workflow) SetCurrentStep(step interface{}) error {
-	var stepName string
-	switch s := step.(type) {
-	case string:
-		stepName = s
-	case *Step:
-		stepName = s.Name
-	default:
-		return fmt.Errorf("invalid step type: %T", step)
+// SetCurrentStep sets the current step, can be a step name or a step pointer
+//
+// Business logic:
+// 1. Check if step exists
+// 2. Mark the current step as completed
+// 3. Set the current step to the new step
+func (w *Workflow) SetCurrentStep(step any) error {
+	stepName, err := stepName(step)
+	if err != nil {
+		return err
 	}
 
-	if _, exists := w.steps[stepName]; !exists {
+	if w.GetStep(stepName) == nil {
 		return fmt.Errorf("step not found: %s", stepName)
 	}
 
-	// Mark the previous step as completed
-	if w.state.CurrentStep != "" && w.state.CurrentStep != stepName {
-		details, exists := w.state.StepDetails[w.state.CurrentStep]
-		if !exists {
-			details = &StepDetails{
-				Meta: make(map[string]interface{}),
-			}
-			w.state.StepDetails[w.state.CurrentStep] = details
-		}
-		details.Completed = time.Now().Format(time.RFC3339)
+	// Mark the current step as completed
+	if w.state.CurrentStepName != "" && w.state.CurrentStepName != stepName {
+		w.state.StepDetails[w.state.CurrentStepName].Completed = time.Now().Format(time.RFC3339)
 	}
 
-	w.state.CurrentStep = stepName
+	w.state.CurrentStepName = stepName
 	w.state.History = append(w.state.History, stepName)
+	w.state.StepDetails[stepName].Started = time.Now().Format(time.RFC3339)
 	return nil
 }
 
 // IsStepCurrent checks if a step is the current step
-func (w *Workflow) IsStepCurrent(step interface{}) bool {
-	var stepName string
-	switch s := step.(type) {
-	case string:
-		stepName = s
-	case *Step:
-		stepName = s.Name
-	default:
+func (w *Workflow) IsStepCurrent(step any) bool {
+	stepName, err := stepName(step)
+	if err != nil {
 		return false
 	}
 
-	return w.state.CurrentStep == stepName
+	return w.state.CurrentStepName == stepName
 }
 
 // IsStepComplete checks if a step is completed
-func (w *Workflow) IsStepComplete(step interface{}) bool {
-	var stepName string
-	switch s := step.(type) {
-	case string:
-		stepName = s
-	case *Step:
-		stepName = s.Name
-	default:
+//
+// Business logic:
+// 1. Get step name
+// 2. Get step positions
+// 3. If step is before the current step, it's complete
+// 4. If step is explicitly marked as completed, it's complete
+func (w *Workflow) IsStepComplete(step any) bool {
+	stepName, err := stepName(step)
+	if err != nil {
 		return false
 	}
 
 	// Get step positions
-	stepKeys := make([]string, 0, len(w.steps))
-	for k := range w.steps {
-		stepKeys = append(stepKeys, k)
-	}
+	stepNames := lo.Map(w.steps, func(item *Step, index int) string {
+		return item.Name
+	})
 
-	currentStepPosition := -1
-	stepPosition := -1
-
-	for i, key := range stepKeys {
-		if key == w.state.CurrentStep {
-			currentStepPosition = i
-		}
-		if key == stepName {
-			stepPosition = i
-		}
-	}
+	currentStepPosition := arr.Index(stepNames, w.state.CurrentStepName)
+	stepPosition := arr.Index(stepNames, stepName)
 
 	// If the step is before the current step, it's complete
 	if stepPosition < currentStepPosition {
@@ -151,40 +152,44 @@ func (w *Workflow) IsStepComplete(step interface{}) bool {
 	}
 
 	// Check if the step is explicitly marked as completed
-	details, exists := w.state.StepDetails[stepName]
-	if !exists {
-		return false
+	return w.state.StepDetails[stepName].Completed != ""
+}
+
+// stepName returns the name of a step, can be a step name or a step pointer
+//
+// Business logic:
+// 1. Check if step is a string
+// 2. Check if step is a step pointer
+// 3. Return error if step is not a string or a step pointer
+func stepName(step any) (string, error) {
+	var stepName string
+	switch s := step.(type) {
+	case string:
+		stepName = s
+	case *Step:
+		stepName = s.Name
+	default:
+		return "", fmt.Errorf("invalid step type: %T", step)
 	}
-	return details.Completed != ""
+	return stepName, nil
 }
 
 // GetProgress returns the workflow progress
 func (w *Workflow) GetProgress() *Progress {
 	total := len(w.steps)
 	completed := 0
-	current := 0
 
-	// Get step positions
-	stepKeys := make([]string, 0, len(w.steps))
-	for k := range w.steps {
-		stepKeys = append(stepKeys, k)
-	}
+	// Get step names
+	stepNames := lo.Map(w.steps, func(item *Step, index int) string {
+		return item.Name
+	})
 
-	currentStepPosition := -1
-	for i, key := range stepKeys {
-		if key == w.state.CurrentStep {
-			currentStepPosition = i
-			break
-		}
-	}
+	currentStepPosition := arr.Index(stepNames, w.state.CurrentStepName)
 
 	// Count completed steps
-	for i, key := range stepKeys {
-		if i < currentStepPosition || w.IsStepComplete(key) {
+	for i, name := range stepNames {
+		if i < currentStepPosition || w.IsStepComplete(name) {
 			completed++
-		}
-		if i == currentStepPosition {
-			current = completed
 		}
 	}
 
@@ -194,80 +199,78 @@ func (w *Workflow) GetProgress() *Progress {
 	return &Progress{
 		Total:     total,
 		Completed: completed,
-		Current:   current,
+		Current:   currentStepPosition,
 		Pending:   pending,
 		Percents:  percents,
 	}
 }
 
 // GetSteps returns all steps
-func (w *Workflow) GetSteps() map[string]*Step {
+func (w *Workflow) GetSteps() []*Step {
 	return w.steps
 }
 
 // GetStep returns a step by name
 func (w *Workflow) GetStep(name string) *Step {
-	return w.steps[name]
+	stepNames := lo.Map(w.steps, func(item *Step, index int) string {
+		return item.Name
+	})
+
+	stepIndex := arr.Index(stepNames, name)
+	if stepIndex == -1 {
+		return nil
+	}
+
+	return w.steps[stepIndex]
 }
 
 // GetStepMeta returns step metadata
-func (w *Workflow) GetStepMeta(step interface{}, key string) interface{} {
-	var stepName string
-	switch s := step.(type) {
-	case string:
-		stepName = s
-	case *Step:
-		stepName = s.Name
-	default:
+//
+// Business logic:
+// 1. Get step name
+// 2. Get step metadata
+// 3. Return metadata or nil if key not found
+func (w *Workflow) GetStepMeta(step any, key string) any {
+	stepName, err := stepName(step)
+	if err != nil {
 		return nil
 	}
 
-	details, exists := w.state.StepDetails[stepName]
-	if !exists || details.Meta == nil {
+	meta, exists := w.state.StepDetails[stepName].Meta[key]
+	if !exists {
 		return nil
 	}
-	return details.Meta[key]
+	return meta
 }
 
 // SetStepMeta sets step metadata
-func (w *Workflow) SetStepMeta(step interface{}, key string, value interface{}) {
-	var stepName string
-	switch s := step.(type) {
-	case string:
-		stepName = s
-	case *Step:
-		stepName = s.Name
-	default:
+func (w *Workflow) SetStepMeta(step any, key string, value interface{}) {
+	stepName, err := stepName(step)
+	if err != nil {
 		return
 	}
 
-	details, exists := w.state.StepDetails[stepName]
-	if !exists {
-		details = &StepDetails{
-			Meta: make(map[string]interface{}),
-		}
-		w.state.StepDetails[stepName] = details
-	}
-	details.Meta[key] = value
+	w.state.StepDetails[stepName].Meta[key] = value
 }
 
 // MarkStepAsCompleted marks a step as completed
-func (w *Workflow) MarkStepAsCompleted(step interface{}) bool {
-	var stepName string
-	switch s := step.(type) {
-	case string:
-		stepName = s
-	case *Step:
-		stepName = s.Name
-	default:
+//
+// Business logic:
+// 1. Get step name
+// 2. Mark step as completed
+// 3. Return true if step was marked as completed
+func (w *Workflow) MarkStepAsCompleted(step any) bool {
+	stepName, err := stepName(step)
+	if err != nil {
 		return false
 	}
 
-	details, exists := w.state.StepDetails[stepName]
-	if !exists {
+	if _, exists := w.state.StepDetails[stepName]; !exists {
 		return false
 	}
-	details.Completed = time.Now().Format(time.RFC3339)
+
+	w.state.StepDetails[stepName].Completed = time.Now().Format(time.RFC3339)
+
 	return true
 }
 
