@@ -30,7 +30,11 @@ func Example() {
 
 	// Get the current step
 	currentStep := wf.GetCurrentStep()
-	fmt.Printf("Current step: %s\n", currentStep.Name)
+	if currentStep != nil { // Added nil check for robustness, though unlikely here
+		fmt.Printf("Current step: %s\n", currentStep.Name)
+	} else {
+		fmt.Println("Current step: <nil>")
+	}
 
 	// Check if a step is current
 	isCurrent := wf.IsStepCurrent(step1)
@@ -81,6 +85,17 @@ func Example() {
 	if err != nil {
 		fmt.Printf("Error deserializing workflow: %v\n", err)
 	} else {
-		fmt.Printf("Deserialized workflow current step: %s\n", newWf.GetCurrentStep().Name)
+		// --- FIX IS HERE ---
+		// After FromString, newWf.steps is empty, so GetCurrentStep will return nil.
+		// We need to check for nil before accessing fields.
+		// We can still access the *name* of the current step from the restored state.
+		fmt.Printf("Deserialized workflow current step name (from state): %s\n", newWf.GetState().CurrentStepName)
+		deserializedCurrentStep := newWf.GetCurrentStep()
+		if deserializedCurrentStep != nil {
+			// This block will likely not be reached with the current FromString implementation
+			fmt.Printf("Deserialized workflow current step object: %s\n", deserializedCurrentStep.Name)
+		} else {
+			fmt.Println("Deserialized workflow current step object: <nil> (Steps are not restored by FromString)")
+		}
 	}
 }
