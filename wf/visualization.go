@@ -31,7 +31,7 @@ const dotTemplateText = `digraph {
 	node [fontname="Arial"]
 	edge [fontname="Arial"]
 {{ range $node := $.Nodes}}	"{{$node.Name}}" [label="{{$node.DisplayName}}" shape={{$node.Shape}} style={{$node.Style}} tooltip="{{$node.Tooltip}}" fillcolor="{{$node.FillColor}}" {{if eq $node.Style "filled"}}fontcolor="white"{{end}}]
-{{ end }}        
+{{ end }}
 {{ range $edge := $.Edges}}	"{{$edge.FromNodeName}}" -> "{{$edge.ToNodeName}}" [style={{$edge.Style}} tooltip="{{$edge.Tooltip}}" color="{{$edge.Color}}"]
 {{ end }}}`
 
@@ -51,28 +51,39 @@ func (p *pipelineImplementation) Visualize() string {
 	nodes := make([]*DotNodeSpec, 0, len(p.nodes))
 	edges := make([]*DotEdgeSpec, 0, len(p.nodes)-1)
 
+	status := p.state.GetStatus()
+	currentStepID := p.state.GetCurrentStepID()
+
 	// Create nodes
 	for i, node := range p.nodes {
 		nodeStyle := "solid"
-		fillColor := "#ffffff"
+		fillColor := "#ffffff" // Default white
+		isCurrentStep := currentStepID == node.GetID()
 
-		// Current step is filled blue
-		if p.state.GetCurrentStepID() == node.GetID() {
+		if isCurrentStep {
+			nodeStyle = "filled" // Current steps are always filled
+			switch status {
+			case StateStatusFailed:
+				fillColor = "#F44336" // Red
+			case StateStatusPaused:
+				fillColor = "#FFC107" // Yellow
+			case StateStatusRunning:
+				fillColor = "#2196F3" // Blue
+			default:
+				// Default to blue if it's the current step but status is unexpected
+				// or if the logic implies current step should be highlighted regardless.
+				fillColor = "#2196F3"
+			}
+		} else if status == StateStatusComplete && i < len(p.nodes)-1 {
+			// Completed steps (except the last one in a completed pipeline) are green
+			// This condition assumes completed steps are only relevant *if* the pipeline itself is complete.
+			// If you want completed steps to be green even in a running/paused/failed pipeline,
+			// you might need: `slices.Contains(p.state.GetCompletedSteps(), node.GetID())`
+			// However, the original logic only colored them green on overall completion.
 			nodeStyle = "filled"
-			fillColor = "#2196F3"
-		} else if p.state.GetStatus() == StateStatusComplete && i < len(p.nodes)-1 {
-			// Completed steps are filled green
-			nodeStyle = "filled"
-			fillColor = "#4CAF50"
-		} else if p.state.GetStatus() == StateStatusFailed && p.state.GetCurrentStepID() == node.GetID() {
-			// Failed step is filled red
-			nodeStyle = "filled"
-			fillColor = "#F44336"
-		} else if p.state.GetStatus() == StateStatusPaused && p.state.GetCurrentStepID() == node.GetID() {
-			// Paused step is filled yellow
-			nodeStyle = "filled"
-			fillColor = "#FFC107"
+			fillColor = "#4CAF50" // Green
 		}
+		// else: Keep default white/solid style for non-current, non-completed steps
 
 		nodes = append(nodes, &DotNodeSpec{
 			Name:        node.GetID(),
@@ -86,11 +97,30 @@ func (p *pipelineImplementation) Visualize() string {
 		// Create edges between steps
 		if i > 0 {
 			edgeStyle := "solid"
-			edgeColor := "#9E9E9E"
+			edgeColor := "#9E9E9E" // Default grey
 
-			// Highlight the path up to the current step
-			if p.state.GetStatus() == StateStatusComplete ||
-				(p.state.GetStatus() == StateStatusRunning && i < len(p.nodes)-1) {
+			// Highlight edges green if the pipeline is complete OR
+			// if the pipeline is running and the edge leads *up to* the current step's index.
+			// Note: The original logic colored edges green if running and i < len(p.nodes)-1,
+			// which seems slightly off. Let's refine to color edges green if the *source* node is completed.
+			// A simpler approach might be green edges only on overall completion.
+			// Let's stick closer to the original intent for now: green edges on complete or up to current on running.
+
+			// Find the index of the current step if it exists
+			currentStepIndex := -1
+			if currentStepID != "" {
+				for idx, n := range p.nodes {
+					if n.GetID() == currentStepID {
+						currentStepIndex = idx
+						break
+					}
+				}
+			}
+
+			if status == StateStatusComplete ||
+				(status == StateStatusRunning && currentStepIndex != -1 && i <= currentStepIndex) {
+				// Color edge green if pipeline is complete, or if running and the edge's target node index (i)
+				// is less than or equal to the current step's index.
 				edgeColor = "#4CAF50"
 			}
 
@@ -114,7 +144,9 @@ func (p *pipelineImplementation) Visualize() string {
 	})
 
 	if err != nil {
-		return fmt.Sprintf("Error generating DOT graph: %v", err)
+		// Consider logging the error instead of returning it in the DOT string
+		// log.Printf("Error generating DOT graph: %v", err)
+		return fmt.Sprintf("digraph { error [label=\"Error generating DOT graph: %v\"]; }", err)
 	}
 
 	return buf.String()
@@ -134,28 +166,35 @@ func (d *Dag) Visualize() string {
 	nodes := make([]*DotNodeSpec, 0, len(d.runnables))
 	edges := make([]*DotEdgeSpec, 0)
 
+	status := d.state.GetStatus()
+	currentStepID := d.state.GetCurrentStepID()
+	completedSteps := d.state.GetCompletedSteps()
+
 	// Create nodes
 	for _, node := range d.runnables {
 		nodeStyle := "solid"
-		fillColor := "#ffffff"
+		fillColor := "#ffffff" // Default white
+		isCurrentStep := currentStepID == node.GetID()
 
-		// First check if this is the current step
-		if d.state.GetCurrentStepID() == node.GetID() {
+		if isCurrentStep {
 			nodeStyle = "filled"
-			switch d.state.GetStatus() {
+			switch status {
 			case StateStatusFailed:
 				fillColor = "#F44336" // red
 			case StateStatusPaused:
 				fillColor = "#FFC107" // yellow
 			case StateStatusRunning:
 				fillColor = "#2196F3" // blue
+			default:
+				// Default to blue if current but status unknown/other
+				fillColor = "#2196F3"
 			}
-		} else if d.state.GetStatus() == StateStatusRunning &&
-			slices.Contains(d.state.GetCompletedSteps(), node.GetID()) {
+		} else if status == StateStatusRunning && slices.Contains(completedSteps, node.GetID()) {
 			// Only color completed steps green when workflow is running
 			nodeStyle = "filled"
 			fillColor = "#4CAF50" // green
 		}
+		// else: Keep default white/solid style
 
 		nodes = append(nodes, &DotNodeSpec{
 			Name:        node.GetID(),
@@ -174,17 +213,17 @@ func (d *Dag) Visualize() string {
 			dependency, depExists2 := d.runnables[dependencyID]
 
 			if !depExists || !depExists2 {
-				continue
+				continue // Should not happen if DAG is consistent
 			}
 
 			edgeStyle := "solid"
-			edgeColor := "#9E9E9E"
+			edgeColor := "#9E9E9E" // Default grey
 
-			// Highlight completed dependencies
-			if d.state.GetStatus() == StateStatusComplete ||
-				(d.state.GetStatus() == StateStatusRunning &&
-					slices.Contains(d.state.GetCompletedSteps(), dependencyID)) {
-				edgeColor = "#4CAF50"
+			// Highlight completed dependencies green if DAG is complete OR
+			// if DAG is running and the source dependency is completed.
+			if status == StateStatusComplete ||
+				(status == StateStatusRunning && slices.Contains(completedSteps, dependencyID)) {
+				edgeColor = "#4CAF50" // Green
 			}
 
 			edges = append(edges, &DotEdgeSpec{
@@ -207,7 +246,9 @@ func (d *Dag) Visualize() string {
 	})
 
 	if err != nil {
-		return fmt.Sprintf("Error generating DOT graph: %v", err)
+		// Consider logging the error
+		// log.Printf("Error generating DOT graph: %v", err)
+		return fmt.Sprintf("digraph { error [label=\"Error generating DOT graph: %v\"]; }", err)
 	}
 
 	return buf.String()
@@ -216,23 +257,24 @@ func (d *Dag) Visualize() string {
 // Visualize returns a DOT graph representation of the step
 func (s *stepImplementation) Visualize() string {
 	nodeStyle := "solid"
-	fillColor := "#ffffff"
+	fillColor := "#ffffff" // Default white
 
 	// Set node style based on state
 	if s.state != nil {
-		nodeStyle = "filled"
-		switch s.state.GetStatus() {
-		case StateStatusFailed:
-			fillColor = "#F44336" // red
-		case StateStatusPaused:
-			fillColor = "#FFC107" // yellow
-		case StateStatusComplete:
-			fillColor = "#4CAF50" // green
-		case StateStatusRunning:
-			fillColor = "#2196F3" // blue
-		default:
-			nodeStyle = "solid"
-			fillColor = "#ffffff" // white
+		status := s.state.GetStatus()
+		// Only fill if not in a default/waiting state
+		if status == StateStatusRunning || status == StateStatusComplete || status == StateStatusFailed || status == StateStatusPaused {
+			nodeStyle = "filled"
+			switch status {
+			case StateStatusFailed:
+				fillColor = "#F44336" // red
+			case StateStatusPaused:
+				fillColor = "#FFC107" // yellow
+			case StateStatusComplete:
+				fillColor = "#4CAF50" // green
+			case StateStatusRunning:
+				fillColor = "#2196F3" // blue
+			}
 		}
 	}
 
@@ -250,14 +292,16 @@ func (s *stepImplementation) Visualize() string {
 	buf := new(bytes.Buffer)
 	err := dotTemplate.Execute(buf, struct {
 		Nodes []*DotNodeSpec
-		Edges []*DotEdgeSpec
+		Edges []*DotEdgeSpec // Steps have no edges in their own visualization
 	}{
 		Nodes: nodes,
 		Edges: []*DotEdgeSpec{},
 	})
 
 	if err != nil {
-		return fmt.Sprintf("Error generating DOT graph: %v", err)
+		// Consider logging the error
+		// log.Printf("Error generating DOT graph: %v", err)
+		return fmt.Sprintf("digraph { error [label=\"Error generating DOT graph: %v\"]; }", err)
 	}
 
 	return buf.String()
