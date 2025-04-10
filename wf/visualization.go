@@ -1,10 +1,10 @@
 package wf
 
 import (
-	"bytes"
 	"fmt"
-	"slices"
-	"text/template"
+	"slices" // Keep slices import as it's used in other Visualize methods
+	"strings"
+	// Keep bytes import as it's used in other Visualize methods
 )
 
 // DotNodeSpec represents a node in the DOT graph
@@ -15,6 +15,7 @@ type DotNodeSpec struct {
 	Shape       string
 	Style       string
 	FillColor   string
+	// Add FontColor for easier string building if needed, or handle conditionally
 }
 
 // DotEdgeSpec represents an edge in the DOT graph
@@ -26,26 +27,101 @@ type DotEdgeSpec struct {
 	Color        string
 }
 
-const dotTemplateText = `digraph {
-	rankdir = "LR"
-	node [fontname="Arial"]
-	edge [fontname="Arial"]
-{{ range $node := $.Nodes}}	"{{$node.Name}}" [label="{{$node.DisplayName}}" shape={{$node.Shape}} style={{$node.Style}} tooltip="{{$node.Tooltip}}" fillcolor="{{$node.FillColor}}" {{if eq $node.Style "filled"}}fontcolor="white"{{end}}]
-{{ end }}
-{{ range $edge := $.Edges}}	"{{$edge.FromNodeName}}" -> "{{$edge.ToNodeName}}" [style={{$edge.Style}} tooltip="{{$edge.Tooltip}}" color="{{$edge.Color}}"]
-{{ end }}}`
+// Helper function to escape double quotes in DOT labels/tooltips
+func escapeDotString(s string) string {
+	return strings.ReplaceAll(s, `"`, `\"`)
+}
 
-var dotTemplate = template.Must(template.New("digraph").Parse(dotTemplateText))
+// getNodeStyleAndColor determines the node's style and color based on its state,
+// *only if* it is the current step. Otherwise, returns defaults.
+func getNodeStyleAndColor(state StateInterface, isCurrentStep bool) (string, string) {
+	nodeStyle := "solid"
+	fillColor := "#ffffff" // Default white
 
-// Visualize returns a DOT graph representation of the workflow
+	// Only apply special styling if this node is the current step
+	if state != nil && isCurrentStep {
+		status := state.GetStatus()
+		// Check if the current node should be filled based on the workflow status
+		shouldBeFilled := status == StateStatusRunning || status == StateStatusComplete || status == StateStatusFailed || status == StateStatusPaused
+
+		if shouldBeFilled {
+			nodeStyle = "filled"
+			switch status {
+			case StateStatusFailed:
+				fillColor = "#F44336" // Red
+			case StateStatusPaused:
+				fillColor = "#FFC107" // Yellow
+			case StateStatusComplete:
+				// If the workflow is complete, the "current" step (which is likely the last one)
+				// might need specific styling, but often it's just default.
+				// Let the specific Visualize method handle this override if needed.
+				// For now, let's assume the last step in a completed workflow is default.
+				// Revert to default if the status is Complete.
+				nodeStyle = "solid"
+				fillColor = "#ffffff"
+			case StateStatusRunning:
+				fillColor = "#2196F3" // Blue
+			default:
+				// Fallback for unexpected status when filled
+				fillColor = "#2196F3" // Default blue
+			}
+		}
+		// If status is not one that implies filling (e.g., initial state ""),
+		// it remains solid white.
+	}
+	return nodeStyle, fillColor
+}
+
+// dotTemplateFuncs generates the DOT graph string directly from node and edge specs.
+func dotTemplateFuncs(nodes []*DotNodeSpec, edges []*DotEdgeSpec) string {
+	var sb strings.Builder
+
+	// Write graph header
+	sb.WriteString("digraph {\n")
+	sb.WriteString("\trankdir = \"LR\"\n")
+	sb.WriteString("\tnode [fontname=\"Arial\"]\n")
+	sb.WriteString("\tedge [fontname=\"Arial\"]\n")
+
+	// Write node definitions
+	for _, node := range nodes {
+		sb.WriteString(fmt.Sprintf("\t\"%s\" [label=\"%s\" shape=%s style=%s tooltip=\"%s\" fillcolor=\"%s\"",
+			escapeDotString(node.Name),
+			escapeDotString(node.DisplayName),
+			node.Shape,
+			node.Style,
+			escapeDotString(node.Tooltip),
+			node.FillColor,
+		))
+		// Add fontcolor conditionally for filled nodes
+		if node.Style == "filled" {
+			sb.WriteString(" fontcolor=\"white\"")
+		}
+		sb.WriteString("]\n")
+	}
+
+	// Write edge definitions
+	for _, edge := range edges {
+		sb.WriteString(fmt.Sprintf("\t\"%s\" -> \"%s\" [style=%s tooltip=\"%s\" color=\"%s\"]\n",
+			escapeDotString(edge.FromNodeName),
+			escapeDotString(edge.ToNodeName),
+			edge.Style,
+			escapeDotString(edge.Tooltip),
+			edge.Color,
+		))
+	}
+
+	// Write graph footer
+	sb.WriteString("}\n")
+
+	return sb.String()
+}
+
+// Visualize returns a DOT graph representation of the workflow using the helper function
 func (p *pipelineImplementation) Visualize() string {
 	// Handle empty pipeline
 	if len(p.nodes) == 0 {
-		return `digraph {
-	rankdir = "LR"
-	node [fontname="Arial"]
-	edge [fontname="Arial"]
-}`
+		// Return the basic empty graph structure
+		return dotTemplateFuncs([]*DotNodeSpec{}, []*DotEdgeSpec{})
 	}
 
 	nodes := make([]*DotNodeSpec, 0, len(p.nodes))
@@ -56,34 +132,24 @@ func (p *pipelineImplementation) Visualize() string {
 
 	// Create nodes
 	for i, node := range p.nodes {
-		nodeStyle := "solid"
-		fillColor := "#ffffff" // Default white
 		isCurrentStep := currentStepID == node.GetID()
+		nodeStyle, fillColor := getNodeStyleAndColor(p.state, isCurrentStep) // Get style only if current
 
-		if isCurrentStep {
-			nodeStyle = "filled" // Current steps are always filled
-			switch status {
-			case StateStatusFailed:
-				fillColor = "#F44336" // Red
-			case StateStatusPaused:
-				fillColor = "#FFC107" // Yellow
-			case StateStatusRunning:
-				fillColor = "#2196F3" // Blue
-			default:
-				// Default to blue if it's the current step but status is unexpected
-				// or if the logic implies current step should be highlighted regardless.
-				fillColor = "#2196F3"
+		// --- Logic for NON-CURRENT steps ---
+		if !isCurrentStep {
+			// Pipeline specific logic: Completed steps (except the last one) are green *if* pipeline is complete
+			if status == StateStatusComplete && i < len(p.nodes)-1 {
+				nodeStyle = "filled"
+				fillColor = "#4CAF50" // Green
+			} else {
+				// Otherwise, non-current steps are default
+				nodeStyle = "solid"
+				fillColor = "#ffffff" // Default white
 			}
-		} else if status == StateStatusComplete && i < len(p.nodes)-1 {
-			// Completed steps (except the last one in a completed pipeline) are green
-			// This condition assumes completed steps are only relevant *if* the pipeline itself is complete.
-			// If you want completed steps to be green even in a running/paused/failed pipeline,
-			// you might need: `slices.Contains(p.state.GetCompletedSteps(), node.GetID())`
-			// However, the original logic only colored them green on overall completion.
-			nodeStyle = "filled"
-			fillColor = "#4CAF50" // Green
 		}
-		// else: Keep default white/solid style for non-current, non-completed steps
+		// --- End Logic for NON-CURRENT steps ---
+
+		// If it *is* the current step, getNodeStyleAndColor already determined the style/color
 
 		nodes = append(nodes, &DotNodeSpec{
 			Name:        node.GetID(),
@@ -99,13 +165,6 @@ func (p *pipelineImplementation) Visualize() string {
 			edgeStyle := "solid"
 			edgeColor := "#9E9E9E" // Default grey
 
-			// Highlight edges green if the pipeline is complete OR
-			// if the pipeline is running and the edge leads *up to* the current step's index.
-			// Note: The original logic colored edges green if running and i < len(p.nodes)-1,
-			// which seems slightly off. Let's refine to color edges green if the *source* node is completed.
-			// A simpler approach might be green edges only on overall completion.
-			// Let's stick closer to the original intent for now: green edges on complete or up to current on running.
-
 			// Find the index of the current step if it exists
 			currentStepIndex := -1
 			if currentStepID != "" {
@@ -117,11 +176,10 @@ func (p *pipelineImplementation) Visualize() string {
 				}
 			}
 
+			// Color edges green if pipeline is complete OR if the source step is before/at the current running step
 			if status == StateStatusComplete ||
 				(status == StateStatusRunning && currentStepIndex != -1 && i <= currentStepIndex) {
-				// Color edge green if pipeline is complete, or if running and the edge's target node index (i)
-				// is less than or equal to the current step's index.
-				edgeColor = "#4CAF50"
+				edgeColor = "#4CAF50" // Green
 			}
 
 			edges = append(edges, &DotEdgeSpec{
@@ -134,33 +192,16 @@ func (p *pipelineImplementation) Visualize() string {
 		}
 	}
 
-	buf := new(bytes.Buffer)
-	err := dotTemplate.Execute(buf, struct {
-		Nodes []*DotNodeSpec
-		Edges []*DotEdgeSpec
-	}{
-		Nodes: nodes,
-		Edges: edges,
-	})
-
-	if err != nil {
-		// Consider logging the error instead of returning it in the DOT string
-		// log.Printf("Error generating DOT graph: %v", err)
-		return fmt.Sprintf("digraph { error [label=\"Error generating DOT graph: %v\"]; }", err)
-	}
-
-	return buf.String()
+	// Use the helper function to generate the DOT string
+	return dotTemplateFuncs(nodes, edges)
 }
 
-// Visualize returns a DOT graph representation of the DAG
+// Visualize returns a DOT graph representation of the DAG using the helper function
 func (d *Dag) Visualize() string {
 	// Handle empty DAG
 	if len(d.runnables) == 0 {
-		return `digraph {
-	rankdir = "LR"
-	node [fontname="Arial"]
-	edge [fontname="Arial"]
-}`
+		// Return the basic empty graph structure
+		return dotTemplateFuncs([]*DotNodeSpec{}, []*DotEdgeSpec{})
 	}
 
 	nodes := make([]*DotNodeSpec, 0, len(d.runnables))
@@ -172,29 +213,24 @@ func (d *Dag) Visualize() string {
 
 	// Create nodes
 	for _, node := range d.runnables {
-		nodeStyle := "solid"
-		fillColor := "#ffffff" // Default white
 		isCurrentStep := currentStepID == node.GetID()
+		nodeStyle, fillColor := getNodeStyleAndColor(d.state, isCurrentStep) // Get style only if current
 
-		if isCurrentStep {
-			nodeStyle = "filled"
-			switch status {
-			case StateStatusFailed:
-				fillColor = "#F44336" // red
-			case StateStatusPaused:
-				fillColor = "#FFC107" // yellow
-			case StateStatusRunning:
-				fillColor = "#2196F3" // blue
-			default:
-				// Default to blue if current but status unknown/other
-				fillColor = "#2196F3"
+		// --- Logic for NON-CURRENT steps ---
+		if !isCurrentStep {
+			// DAG specific logic: Completed steps are green *only* when the DAG is *running*
+			if status == StateStatusRunning && slices.Contains(completedSteps, node.GetID()) {
+				nodeStyle = "filled"
+				fillColor = "#4CAF50" // green
+			} else {
+				// Otherwise, non-current steps are default (including completed steps when DAG is not running)
+				nodeStyle = "solid"
+				fillColor = "#ffffff" // Default white
 			}
-		} else if status == StateStatusRunning && slices.Contains(completedSteps, node.GetID()) {
-			// Only color completed steps green when workflow is running
-			nodeStyle = "filled"
-			fillColor = "#4CAF50" // green
 		}
-		// else: Keep default white/solid style
+		// --- End Logic for NON-CURRENT steps ---
+
+		// If it *is* the current step, getNodeStyleAndColor already determined the style/color
 
 		nodes = append(nodes, &DotNodeSpec{
 			Name:        node.GetID(),
@@ -219,8 +255,7 @@ func (d *Dag) Visualize() string {
 			edgeStyle := "solid"
 			edgeColor := "#9E9E9E" // Default grey
 
-			// Highlight completed dependencies green if DAG is complete OR
-			// if DAG is running and the source dependency is completed.
+			// Color edges green if DAG is complete OR if DAG is running and the source dependency is completed.
 			if status == StateStatusComplete ||
 				(status == StateStatusRunning && slices.Contains(completedSteps, dependencyID)) {
 				edgeColor = "#4CAF50" // Green
@@ -236,44 +271,31 @@ func (d *Dag) Visualize() string {
 		}
 	}
 
-	buf := new(bytes.Buffer)
-	err := dotTemplate.Execute(buf, struct {
-		Nodes []*DotNodeSpec
-		Edges []*DotEdgeSpec
-	}{
-		Nodes: nodes,
-		Edges: edges,
-	})
-
-	if err != nil {
-		// Consider logging the error
-		// log.Printf("Error generating DOT graph: %v", err)
-		return fmt.Sprintf("digraph { error [label=\"Error generating DOT graph: %v\"]; }", err)
-	}
-
-	return buf.String()
+	// Use the helper function to generate the DOT string
+	return dotTemplateFuncs(nodes, edges)
 }
 
-// Visualize returns a DOT graph representation of the step
+// Visualize returns a DOT graph representation of the step using the helper function
 func (s *stepImplementation) Visualize() string {
-	nodeStyle := "solid"
-	fillColor := "#ffffff" // Default white
-
-	// Set node style based on state
+	// For a single step, it's always the "current" step in its own visualization context.
+	// However, we need to handle the 'Complete' status specifically for single steps.
+	nodeStyle, fillColor := "solid", "#ffffff" // Start with default
 	if s.state != nil {
 		status := s.state.GetStatus()
-		// Only fill if not in a default/waiting state
-		if status == StateStatusRunning || status == StateStatusComplete || status == StateStatusFailed || status == StateStatusPaused {
+		shouldBeFilled := status == StateStatusRunning || status == StateStatusComplete || status == StateStatusFailed || status == StateStatusPaused
+		if shouldBeFilled {
 			nodeStyle = "filled"
 			switch status {
 			case StateStatusFailed:
-				fillColor = "#F44336" // red
+				fillColor = "#F44336" // Red
 			case StateStatusPaused:
-				fillColor = "#FFC107" // yellow
-			case StateStatusComplete:
-				fillColor = "#4CAF50" // green
+				fillColor = "#FFC107" // Yellow
+			case StateStatusComplete: // Handle complete specifically for single step
+				fillColor = "#4CAF50" // Green
 			case StateStatusRunning:
-				fillColor = "#2196F3" // blue
+				fillColor = "#2196F3" // Blue
+			default:
+				fillColor = "#2196F3" // Fallback blue
 			}
 		}
 	}
@@ -289,20 +311,9 @@ func (s *stepImplementation) Visualize() string {
 		},
 	}
 
-	buf := new(bytes.Buffer)
-	err := dotTemplate.Execute(buf, struct {
-		Nodes []*DotNodeSpec
-		Edges []*DotEdgeSpec // Steps have no edges in their own visualization
-	}{
-		Nodes: nodes,
-		Edges: []*DotEdgeSpec{},
-	})
+	// Steps have no edges in their own visualization
+	edges := []*DotEdgeSpec{}
 
-	if err != nil {
-		// Consider logging the error
-		// log.Printf("Error generating DOT graph: %v", err)
-		return fmt.Sprintf("digraph { error [label=\"Error generating DOT graph: %v\"]; }", err)
-	}
-
-	return buf.String()
+	// Use the helper function to generate the DOT string
+	return dotTemplateFuncs(nodes, edges)
 }

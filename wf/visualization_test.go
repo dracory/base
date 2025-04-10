@@ -85,8 +85,8 @@ func TestPipelineVisualization(t *testing.T) {
 	runningState.SetStatus(wf.StateStatusRunning)
 	runningState.SetCurrentStepID(step2.GetID())
 	// Add completed steps if necessary for the running state visualization logic
-	// runningState.AddCompletedStep(step1.GetID()) // Example if needed
-	pipeline.SetState(runningState) // Apply the specific state
+	runningState.AddCompletedStep(step1.GetID()) // Step 1 is completed before Step 2 runs
+	pipeline.SetState(runningState)              // Apply the specific state
 
 	dot = pipeline.Visualize()
 	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=filled tooltip="Step: Step 2" fillcolor="#2196F3" fontcolor="white"]`, step2.GetID())
@@ -94,12 +94,13 @@ func TestPipelineVisualization(t *testing.T) {
 		t.Errorf("Current step (Step 2) should be colored blue. Expected substring: %s\nGot DOT:\n%s", step2NodeDef, dot)
 	}
 	// Ensure others are default
-	step1NodeDefDefault := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=solid tooltip="Step: Step 1" fillcolor="#ffffff" ]`, step1.GetID())
+	// FIX: Removed trailing space before ]
+	step1NodeDefDefault := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=solid tooltip="Step: Step 1" fillcolor="#ffffff"]`, step1.GetID())
 	if !strings.Contains(dot, step1NodeDefDefault) {
 		t.Errorf("Non-current step (Step 1) should have default style. Expected substring: %s\nGot DOT:\n%s", step1NodeDefDefault, dot)
 	}
 	// Check edge colors for running state
-	edge12Running := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#4CAF50"]`, step1.GetID(), step2.GetID()) // Edge before current might be green
+	edge12Running := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#4CAF50"]`, step1.GetID(), step2.GetID()) // Edge before current should be green
 	edge23Running := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after current should be grey
 	if !strings.Contains(dot, edge12Running) {
 		t.Errorf("Edge before current step (1->2) should be green. Expected substring: %s\nGot DOT:\n%s", edge12Running, dot)
@@ -111,6 +112,8 @@ func TestPipelineVisualization(t *testing.T) {
 	// --- Test visualization with completed steps ---
 	// Create a new state for this test case
 	completedState := wf.NewState()
+	// Need valid transitions to reach Complete
+	completedState.SetStatus(wf.StateStatusRunning)
 	completedState.SetStatus(wf.StateStatusComplete)
 	completedState.SetCurrentStepID("") // No current step when complete
 	completedState.AddCompletedStep(step1.GetID())
@@ -122,7 +125,8 @@ func TestPipelineVisualization(t *testing.T) {
 	step1NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=filled tooltip="Step: Step 1" fillcolor="#4CAF50" fontcolor="white"]`, step1.GetID())
 	step2NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=filled tooltip="Step: Step 2" fillcolor="#4CAF50" fontcolor="white"]`, step2.GetID())
 	// Based on visualization.go: `i < len(p.nodes)-1`, the last node won't be green on complete.
-	step3NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 3" shape=box style=solid tooltip="Step: Step 3" fillcolor="#ffffff" ]`, step3.GetID())
+	// FIX: Removed trailing space before ]
+	step3NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 3" shape=box style=solid tooltip="Step: Step 3" fillcolor="#ffffff"]`, step3.GetID())
 
 	if !strings.Contains(dot, step1NodeDefComplete) {
 		t.Errorf("Completed step (Step 1) should be colored green. Expected substring: %s\nGot DOT:\n%s", step1NodeDefComplete, dot)
@@ -158,9 +162,9 @@ func TestPipelineVisualization(t *testing.T) {
 	if !strings.Contains(dot, step2NodeDefFailed) {
 		t.Errorf("Failed step (Step 2) should be colored red. Expected substring: %s\nGot DOT:\n%s", step2NodeDefFailed, dot)
 	}
-	// Check edge colors on fail (should be default grey)
-	edge12Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#9E9E9E"]`, step1.GetID(), step2.GetID())
-	edge23Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID())
+	// Check edge colors on fail (should be default grey, except for completed edges before failure)
+	edge12Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#9E9E9E"]`, step1.GetID(), step2.GetID()) // Edge leading to failed step
+	edge23Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after failed step
 	if !strings.Contains(dot, edge12Failed) {
 		t.Errorf("Edge leading to failed step (1->2) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge12Failed, dot)
 	}
@@ -183,9 +187,9 @@ func TestPipelineVisualization(t *testing.T) {
 	if !strings.Contains(dot, step2NodeDefPaused) {
 		t.Errorf("Paused step (Step 2) should be colored yellow. Expected substring: %s\nGot DOT:\n%s", step2NodeDefPaused, dot)
 	}
-	// Check edge colors on pause (should be default grey)
-	edge12Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#9E9E9E"]`, step1.GetID(), step2.GetID())
-	edge23Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID())
+	// Check edge colors on pause (should be default grey, except for completed edges before pause)
+	edge12Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#9E9E9E"]`, step1.GetID(), step2.GetID()) // Edge leading to paused step
+	edge23Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after paused step
 	if !strings.Contains(dot, edge12Paused) {
 		t.Errorf("Edge leading to paused step (1->2) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge12Paused, dot)
 	}
@@ -194,8 +198,10 @@ func TestPipelineVisualization(t *testing.T) {
 	}
 }
 
-// ... (rest of the file remains the same) ...
-
+// TestDagVisualization_Empty tests visualization of an empty DAG.
+// It verifies that the visualization only contains the basic structure
+// (i.e., "digraph" and a left-to-right layout), and does not contain
+// any nodes or edges.
 func TestDagVisualization_Empty(t *testing.T) {
 	// Test empty DAG
 	emptyDag := wf.NewDag()
@@ -253,6 +259,10 @@ func createTestDag() (wf.DagInterface, wf.StepInterface, wf.StepInterface, wf.St
 	return dag, step1, step2, step3, step4, step5
 }
 
+// TestDagVisualization_Basic tests basic visualization of a DAG when it is in
+// its initial state (no steps have been run yet). It verifies that the
+// visualization contains all steps, edges between them, and has a left-to-right
+// layout.
 func TestDagVisualization_Basic(t *testing.T) {
 	dag, step1, step2, step3, step4, step5 := createTestDag()
 
@@ -311,6 +321,10 @@ func TestDagVisualization_Basic(t *testing.T) {
 	}
 }
 
+// TestDagVisualization_Running tests visualization of a DAG when it is in the
+// running state (one step is currently running, and some steps are waiting or
+// completed). It verifies that the visualization is correct for the running
+// step, completed steps, waiting steps, and edges between them.
 func TestDagVisualization_Running(t *testing.T) {
 	dag, step1, step2, step3, step4, _ := createTestDag()
 
@@ -335,13 +349,15 @@ func TestDagVisualization_Running(t *testing.T) {
 	}
 
 	// Check Step 2 (Waiting, depends on completed Step 1) - Should be default
-	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=solid tooltip="Step: Step 2" fillcolor="#ffffff" ]`, step2.GetID())
+	// FIX: Removed trailing space before ]
+	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=solid tooltip="Step: Step 2" fillcolor="#ffffff"]`, step2.GetID())
 	if !strings.Contains(dot, step2NodeDef) {
 		t.Errorf("Waiting step (Step 2) should be default. Expected substring: %s", step2NodeDef)
 	}
 
 	// Check Step 4 (Waiting) - Should be default
-	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4" shape=box style=solid tooltip="Step: Step 4" fillcolor="#ffffff" ]`, step4.GetID())
+	// FIX: Removed trailing space before ]
+	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4" shape=box style=solid tooltip="Step: Step 4" fillcolor="#ffffff"]`, step4.GetID())
 	if !strings.Contains(dot, step4NodeDef) {
 		t.Errorf("Waiting step (Step 4) should be default. Expected substring: %s", step4NodeDef)
 	}
@@ -370,6 +386,8 @@ func TestDagVisualization_Completed(t *testing.T) {
 	dag, step1, step2, step3, step4, step5 := createTestDag()
 
 	// Simulate completed state
+	// Need valid transitions
+	dag.GetState().SetStatus(wf.StateStatusRunning)
 	dag.GetState().SetStatus(wf.StateStatusComplete)
 	dag.GetState().AddCompletedStep(step1.GetID())
 	dag.GetState().AddCompletedStep(step2.GetID())
@@ -384,7 +402,8 @@ func TestDagVisualization_Completed(t *testing.T) {
 	// Check Nodes (All should be default color when DAG is complete, based on visualization.go logic)
 	expectedNodeStyle := `style=solid tooltip="Step: Step %d" fillcolor="#ffffff"`
 	for i, step := range []wf.StepInterface{step1, step2, step3, step4, step5} {
-		nodeDef := fmt.Sprintf(`"%s" [label="Step %d" shape=box %s ]`, step.GetID(), i+1, fmt.Sprintf(expectedNodeStyle, i+1))
+		// FIX: Removed trailing space before ]
+		nodeDef := fmt.Sprintf(`"%s" [label="Step %d" shape=box %s]`, step.GetID(), i+1, fmt.Sprintf(expectedNodeStyle, i+1))
 		if !strings.Contains(dot, nodeDef) {
 			t.Errorf("Node (Step %d) should have default style when DAG complete. Expected substring: %s", i+1, nodeDef)
 		}
@@ -406,6 +425,8 @@ func TestDagVisualization_Failed(t *testing.T) {
 	dag, step1, step2, step3, step4, _ := createTestDag()
 
 	// Simulate failed state: Failed at Step 4. Steps 1, 2, 3 completed.
+	// Need valid transitions
+	dag.GetState().SetStatus(wf.StateStatusRunning)
 	dag.GetState().SetStatus(wf.StateStatusFailed)
 	dag.GetState().AddCompletedStep(step1.GetID())
 	dag.GetState().AddCompletedStep(step2.GetID())
@@ -424,7 +445,8 @@ func TestDagVisualization_Failed(t *testing.T) {
 	// Check Completed Steps (Should be default color when DAG failed, based on visualization.go)
 	expectedNodeStyle := `style=solid tooltip="Step: Step %d" fillcolor="#ffffff"`
 	for i, step := range []wf.StepInterface{step1, step2, step3} {
-		nodeDef := fmt.Sprintf(`"%s" [label="Step %d" shape=box %s ]`, step.GetID(), i+1, fmt.Sprintf(expectedNodeStyle, i+1))
+		// FIX: Removed trailing space before ]
+		nodeDef := fmt.Sprintf(`"%s" [label="Step %d" shape=box %s]`, step.GetID(), i+1, fmt.Sprintf(expectedNodeStyle, i+1))
 		if !strings.Contains(dot, nodeDef) {
 			t.Errorf("Completed node (Step %d) should have default style when DAG failed. Expected substring: %s", i+1, nodeDef)
 		}
@@ -446,6 +468,8 @@ func TestDagVisualization_Paused(t *testing.T) {
 	dag, step1, step2, step3, _, _ := createTestDag()
 
 	// Simulate paused state: Paused at Step 3. Step 1 completed.
+	// Need valid transitions
+	dag.GetState().SetStatus(wf.StateStatusRunning)
 	dag.GetState().SetStatus(wf.StateStatusPaused)
 	dag.GetState().AddCompletedStep(step1.GetID())
 	dag.GetState().SetCurrentStepID(step3.GetID()) // Paused step
@@ -460,13 +484,15 @@ func TestDagVisualization_Paused(t *testing.T) {
 	}
 
 	// Check Completed Step 1 (Should be default color when DAG paused)
-	step1NodeDef := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=solid tooltip="Step: Step 1" fillcolor="#ffffff" ]`, step1.GetID())
+	// FIX: Removed trailing space before ]
+	step1NodeDef := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=solid tooltip="Step: Step 1" fillcolor="#ffffff"]`, step1.GetID())
 	if !strings.Contains(dot, step1NodeDef) {
 		t.Errorf("Completed node (Step 1) should have default style when DAG paused. Expected substring: %s", step1NodeDef)
 	}
 
 	// Check Waiting Step 2 (Should be default color)
-	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=solid tooltip="Step: Step 2" fillcolor="#ffffff" ]`, step2.GetID())
+	// FIX: Removed trailing space before ]
+	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=solid tooltip="Step: Step 2" fillcolor="#ffffff"]`, step2.GetID())
 	if !strings.Contains(dot, step2NodeDef) {
 		t.Errorf("Waiting node (Step 2) should have default style when DAG paused. Expected substring: %s", step2NodeDef)
 	}
