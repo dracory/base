@@ -1,17 +1,25 @@
 # WF (Workflow) Package
 
-The wf package provides a flexible and extensible framework for defining and executing sequential operations in Go.
+The wf package provides a flexible and extensible framework for defining
+and executing automated tasks and processes in Go. It is designed for
+computational workflows where steps are executed programmatically
+without requiring manual intervention.
 
-The Runnable interface is implemented by the Step, Pipeline, and Dag types.
+The Runnable interface is implemented by the Step, Pipeline, and Dag types,
+providing a unified way to execute automated tasks.
 
-The Step type is used for representing a single unit of work that can be executed within a given context and specified data.
+The Step type is used for representing a single unit of automated work that
+can be executed within a given context and specified data.
 
-The Pipeline type is used for grouping related runnables and executing them in sequence.
+The Pipeline type is used for grouping related automated tasks and executing
+them in sequence.
 
-The Dag (Directed Acyclic Graph) type is used for advanced workflow management with dependencies between runnables.
+The Dag (Directed Acyclic Graph) type is used for advanced workflow management
+with dependencies between automated tasks.
 
 ## Key Features
 
+- **Automated Task Execution**: Define and execute tasks programmatically without manual intervention
 - **Simple Step Definitions**: Easily define individual operations as reusable steps
 - **Organized Pipelines**: Group related operations into logical pipelines for better maintainability
 - **Flexible Dependencies**: Create complex workflows with step dependencies using DAG
@@ -21,6 +29,26 @@ The Dag (Directed Acyclic Graph) type is used for advanced workflow management w
 - **State Management**: Track and persist workflow execution state
 - **Pause and Resume**: Ability to pause, save, and resume workflow execution
 - **Testable**: Designed with testing in mind
+
+## When to Use This Package
+
+This package is ideal for:
+
+- Data processing pipelines
+- Automated build processes
+- ETL workflows
+- Batch processing jobs
+- Service orchestration
+- Automated testing pipelines
+- Any process that can be executed programmatically
+
+It is not suitable for:
+
+- Human-driven approval workflows
+- Manual review processes
+- Step-by-step form completion
+- Processes requiring manual intervention
+- Business processes with human decision points
 
 ## Core Components
 

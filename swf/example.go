@@ -62,6 +62,11 @@ func Example() {
 	// Mark a step as completed
 	wf.MarkStepAsCompleted(step2)
 
+	// Visualize the workflow
+	dotGraph := wf.Visualize()
+	fmt.Println("Workflow visualization (DOT format):")
+	fmt.Println(dotGraph)
+
 	// Serialize the workflow state
 	state, err := wf.ToString()
 	if err != nil {
