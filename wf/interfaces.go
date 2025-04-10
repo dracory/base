@@ -25,6 +25,9 @@ type RunnableInterface interface {
 	IsCompleted() bool
 	IsFailed() bool
 	IsWaiting() bool
+
+	// Visualize returns a DOT graph representation of the workflow component
+	Visualize() string
 }
 
 // StepInterface represents a single node in a Pipeline, Workflow or DAG.

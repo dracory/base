@@ -1,5 +1,7 @@
 # WF (Workflow) Package
 
+![DAG](./media/dag.svg)
+
 The wf package provides a flexible and extensible framework for defining
 and executing automated tasks and processes in Go. It is designed for
 computational workflows where steps are executed programmatically
@@ -123,6 +125,9 @@ dag.DependencyAdd(step2, step1) // step2 depends on step1
 ```
 
 ### Using a Pipeline in a DAG
+
+![Pipeline](./media/pipeline.svg)
+
 
 ```go
 // Create a pipeline with steps

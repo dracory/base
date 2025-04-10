@@ -153,3 +153,30 @@ func (s *stepImplementation) IsFailed() bool {
 func (s *stepImplementation) IsWaiting() bool {
 	return s.state.GetStatus() == "" // Initial state before running
 }
+
+// // Visualize returns a DOT graph representation of the step
+// func (s *stepImplementation) Visualize() string {
+// 	var color string
+// 	switch s.state.GetStatus() {
+// 	case StateStatusRunning:
+// 		color = "yellow"
+// 	case StateStatusComplete:
+// 		color = "green"
+// 	case StateStatusFailed:
+// 		color = "red"
+// 	case StateStatusPaused:
+// 		color = "orange"
+// 	default:
+// 		color = "gray"
+// 	}
+
+// 	name := s.GetName()
+// 	if name == "" {
+// 		name = s.GetID()
+// 	}
+
+// 	return fmt.Sprintf(`digraph {
+//     node [shape=box, style=filled, fillcolor=%s];
+//     "%s" [label="%s"];
+// }`, color, s.GetID(), name)
+// }

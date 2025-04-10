@@ -198,3 +198,43 @@ func (p *pipelineImplementation) IsFailed() bool {
 func (p *pipelineImplementation) IsWaiting() bool {
 	return p.state.GetStatus() == "" // Initial state before running
 }
+
+// // Visualize returns a DOT graph representation of the pipeline
+// func (p *pipelineImplementation) Visualize() string {
+// 	var sb strings.Builder
+// 	sb.WriteString("digraph {\n")
+// 	sb.WriteString("    rankdir=LR;\n")
+// 	sb.WriteString("    node [shape=box, style=filled];\n")
+
+// 	// Add nodes
+// 	for _, runnable := range p.nodes {
+// 		var color string
+// 		switch {
+// 		case runnable.IsRunning():
+// 			color = "yellow"
+// 		case runnable.IsCompleted():
+// 			color = "green"
+// 		case runnable.IsFailed():
+// 			color = "red"
+// 		case runnable.IsPaused():
+// 			color = "orange"
+// 		default:
+// 			color = "gray"
+// 		}
+
+// 		name := runnable.GetName()
+// 		if name == "" {
+// 			name = runnable.GetID()
+// 		}
+
+// 		sb.WriteString(fmt.Sprintf(`    "%s" [label="%s", fillcolor="%s"];`+"\n", runnable.GetID(), name, color))
+// 	}
+
+// 	// Add edges
+// 	for i := 0; i < len(p.nodes)-1; i++ {
+// 		sb.WriteString(fmt.Sprintf(`    "%s" -> "%s";`+"\n", p.nodes[i].GetID(), p.nodes[i+1].GetID()))
+// 	}
+
+// 	sb.WriteString("}\n")
+// 	return sb.String()
+// }
