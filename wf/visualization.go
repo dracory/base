@@ -113,13 +113,12 @@ func (d *Dag) Visualize() string {
 }
 
 // Visualize returns a DOT graph representation of the step.
-// (This one is quite specific, less benefit from further abstraction here)
 func (s *stepImplementation) Visualize() string {
 	nodeStyle, fillColor := nodeStyleSolid, colorWhite // Default
 
 	status, _, _ := getWorkflowStateInfo(s.state) // Use helper for consistency
 
-	// Single step visualization logic is simple and direct
+	// Determine style and color based on status
 	switch status {
 	case StateStatusRunning:
 		nodeStyle = nodeStyleFilled
@@ -135,14 +134,8 @@ func (s *stepImplementation) Visualize() string {
 		fillColor = colorYellow
 	}
 
-	// Build node spec directly (using helper is minimal gain here)
-	nodeSpec := &DotNodeSpec{
-		Name:        s.GetID(),
-		DisplayName: s.GetName(),
-		Shape:       "box",
-		Style:       nodeStyle,
-		FillColor:   fillColor,
-	}
+	// FIX: Use createDotNodeSpec to ensure consistent node creation including tooltip
+	nodeSpec := createDotNodeSpec(s, nodeStyle, fillColor)
 
 	edges := []*DotEdgeSpec{} // Steps have no edges
 

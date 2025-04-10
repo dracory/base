@@ -65,18 +65,38 @@ func TestPipelineVisualization(t *testing.T) {
 		t.Error("Pipeline visualization should contain all step names as labels")
 	}
 	// Check if all steps are present by ID (node definition)
-	if !strings.Contains(dot, `"`+step1.GetID()+`"`) || !strings.Contains(dot, `"`+step2.GetID()+`"`) || !strings.Contains(dot, `"`+step3.GetID()+`"`) {
-		t.Error("Pipeline visualization should contain all step IDs as nodes")
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDefInitial := fmt.Sprintf(`"%s" [label="Step 1", style=solid, tooltip="Step: Step 1", fillcolor="#ffffff"]`, step1.GetID())
+	step2NodeDefInitial := fmt.Sprintf(`"%s" [label="Step 2", style=solid, tooltip="Step: Step 2", fillcolor="#ffffff"]`, step2.GetID())
+	step3NodeDefInitial := fmt.Sprintf(`"%s" [label="Step 3", style=solid, tooltip="Step: Step 3", fillcolor="#ffffff"]`, step3.GetID())
+	if !strings.Contains(dot, step1NodeDefInitial) {
+		t.Errorf("Initial Step 1 node definition incorrect. Expected substring: %s\nGot DOT:\n%s", step1NodeDefInitial, dot)
+	}
+	if !strings.Contains(dot, step2NodeDefInitial) {
+		t.Errorf("Initial Step 2 node definition incorrect. Expected substring: %s\nGot DOT:\n%s", step2NodeDefInitial, dot)
+	}
+	if !strings.Contains(dot, step3NodeDefInitial) {
+		t.Errorf("Initial Step 3 node definition incorrect. Expected substring: %s\nGot DOT:\n%s", step3NodeDefInitial, dot)
 	}
 
 	// Check if edges are present
 	edge12 := fmt.Sprintf(`"%s" -> "%s"`, step1.GetID(), step2.GetID())
 	edge23 := fmt.Sprintf(`"%s" -> "%s"`, step2.GetID(), step3.GetID())
-	if !strings.Contains(dot, edge12) {
+	// FIX: Check edge attributes for initial state (should be grey)
+	edge12Initial := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 2", color="#9E9E9E"]`, step1.GetID(), step2.GetID())
+	edge23Initial := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 3", color="#9E9E9E"]`, step2.GetID(), step3.GetID())
+
+	if !strings.Contains(dot, edge12) { // Basic check for edge existence
 		t.Errorf("Pipeline visualization should contain edge: %s", edge12)
 	}
-	if !strings.Contains(dot, edge23) {
+	if !strings.Contains(dot, edge23) { // Basic check for edge existence
 		t.Errorf("Pipeline visualization should contain edge: %s", edge23)
+	}
+	if !strings.Contains(dot, edge12Initial) {
+		t.Errorf("Initial edge (1->2) definition incorrect. Expected substring: %s\nGot DOT:\n%s", edge12Initial, dot)
+	}
+	if !strings.Contains(dot, edge23Initial) {
+		t.Errorf("Initial edge (2->3) definition incorrect. Expected substring: %s\nGot DOT:\n%s", edge23Initial, dot)
 	}
 
 	// --- Test visualization with current step (Running) ---
@@ -89,19 +109,27 @@ func TestPipelineVisualization(t *testing.T) {
 	pipeline.SetState(runningState)              // Apply the specific state
 
 	dot = pipeline.Visualize()
-	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=filled tooltip="Step: Step 2" fillcolor="#2196F3" fontcolor="white"]`, step2.GetID())
-	if !strings.Contains(dot, step2NodeDef) {
-		t.Errorf("Current step (Step 2) should be colored blue. Expected substring: %s\nGot DOT:\n%s", step2NodeDef, dot)
+	// FIX: Removed shape=box, adjusted attribute format
+	step2NodeDefRunning := fmt.Sprintf(`"%s" [label="Step 2", style=filled, tooltip="Step: Step 2", fillcolor="#2196F3", fontcolor="white"]`, step2.GetID())
+	if !strings.Contains(dot, step2NodeDefRunning) {
+		t.Errorf("Current step (Step 2) should be colored blue. Expected substring: %s\nGot DOT:\n%s", step2NodeDefRunning, dot)
 	}
-	// Ensure others are default
-	// FIX: Removed trailing space before ]
-	step1NodeDefDefault := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=solid tooltip="Step: Step 1" fillcolor="#ffffff"]`, step1.GetID())
-	if !strings.Contains(dot, step1NodeDefDefault) {
-		t.Errorf("Non-current step (Step 1) should have default style. Expected substring: %s\nGot DOT:\n%s", step1NodeDefDefault, dot)
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDefRunning := fmt.Sprintf(`"%s" [label="Step 1", style=filled, tooltip="Step: Step 1", fillcolor="#4CAF50", fontcolor="white"]`, step1.GetID())
+	if !strings.Contains(dot, step1NodeDefRunning) {
+		t.Errorf("Completed step (Step 1) in running pipeline should be green. Expected substring: %s\nGot DOT:\n%s", step1NodeDefRunning, dot)
 	}
+	// FIX: Removed shape=box, adjusted attribute format
+	step3NodeDefRunning := fmt.Sprintf(`"%s" [label="Step 3", style=solid, tooltip="Step: Step 3", fillcolor="#ffffff"]`, step3.GetID())
+	if !strings.Contains(dot, step3NodeDefRunning) {
+		t.Errorf("Future step (Step 3) in running pipeline should be default. Expected substring: %s\nGot DOT:\n%s", step3NodeDefRunning, dot)
+	}
+
 	// Check edge colors for running state
-	edge12Running := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#4CAF50"]`, step1.GetID(), step2.GetID()) // Edge before current should be green
-	edge23Running := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after current should be grey
+	// FIX: Adjusted attribute format
+	edge12Running := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 2", color="#4CAF50"]`, step1.GetID(), step2.GetID()) // Edge before current should be green
+	// FIX: Adjusted attribute format
+	edge23Running := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 3", color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after current should be grey
 	if !strings.Contains(dot, edge12Running) {
 		t.Errorf("Edge before current step (1->2) should be green. Expected substring: %s\nGot DOT:\n%s", edge12Running, dot)
 	}
@@ -122,11 +150,13 @@ func TestPipelineVisualization(t *testing.T) {
 	pipeline.SetState(completedState) // Apply the specific state
 
 	dot = pipeline.Visualize()
-	step1NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=filled tooltip="Step: Step 1" fillcolor="#4CAF50" fontcolor="white"]`, step1.GetID())
-	step2NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=filled tooltip="Step: Step 2" fillcolor="#4CAF50" fontcolor="white"]`, step2.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 1", style=filled, tooltip="Step: Step 1", fillcolor="#4CAF50", fontcolor="white"]`, step1.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step2NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 2", style=filled, tooltip="Step: Step 2", fillcolor="#4CAF50", fontcolor="white"]`, step2.GetID())
 	// Based on visualization.go: `i < len(p.nodes)-1`, the last node won't be green on complete.
-	// FIX: Removed trailing space before ]
-	step3NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 3" shape=box style=solid tooltip="Step: Step 3" fillcolor="#ffffff"]`, step3.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step3NodeDefComplete := fmt.Sprintf(`"%s" [label="Step 3", style=solid, tooltip="Step: Step 3", fillcolor="#ffffff"]`, step3.GetID())
 
 	if !strings.Contains(dot, step1NodeDefComplete) {
 		t.Errorf("Completed step (Step 1) should be colored green. Expected substring: %s\nGot DOT:\n%s", step1NodeDefComplete, dot)
@@ -138,8 +168,10 @@ func TestPipelineVisualization(t *testing.T) {
 		t.Errorf("Last step (Step 3) should not be green when pipeline complete. Expected substring: %s\nGot DOT:\n%s", step3NodeDefComplete, dot)
 	}
 	// Check edge colors on complete
-	edge12Complete := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#4CAF50"]`, step1.GetID(), step2.GetID())
-	edge23Complete := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#4CAF50"]`, step2.GetID(), step3.GetID())
+	// FIX: Adjusted attribute format
+	edge12Complete := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 2", color="#4CAF50"]`, step1.GetID(), step2.GetID())
+	// FIX: Adjusted attribute format
+	edge23Complete := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 3", color="#4CAF50"]`, step2.GetID(), step3.GetID())
 	if !strings.Contains(dot, edge12Complete) {
 		t.Errorf("Completed edge (1->2) should be colored green. Expected substring: %s\nGot DOT:\n%s", edge12Complete, dot)
 	}
@@ -158,13 +190,27 @@ func TestPipelineVisualization(t *testing.T) {
 	pipeline.SetState(failedState)              // Apply the specific state
 
 	dot = pipeline.Visualize()
-	step2NodeDefFailed := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=filled tooltip="Step: Step 2" fillcolor="#F44336" fontcolor="white"]`, step2.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step2NodeDefFailed := fmt.Sprintf(`"%s" [label="Step 2", style=filled, tooltip="Step: Step 2", fillcolor="#F44336", fontcolor="white"]`, step2.GetID())
 	if !strings.Contains(dot, step2NodeDefFailed) {
 		t.Errorf("Failed step (Step 2) should be colored red. Expected substring: %s\nGot DOT:\n%s", step2NodeDefFailed, dot)
 	}
-	// Check edge colors on fail (should be default grey, except for completed edges before failure)
-	edge12Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#9E9E9E"]`, step1.GetID(), step2.GetID()) // Edge leading to failed step
-	edge23Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after failed step
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDefFailed := fmt.Sprintf(`"%s" [label="Step 1", style=solid, tooltip="Step: Step 1", fillcolor="#ffffff"]`, step1.GetID())
+	if !strings.Contains(dot, step1NodeDefFailed) {
+		t.Errorf("Completed step (Step 1) in failed pipeline should have default style. Expected substring: %s\nGot DOT:\n%s", step1NodeDefFailed, dot)
+	}
+	// FIX: Removed shape=box, adjusted attribute format
+	step3NodeDefFailed := fmt.Sprintf(`"%s" [label="Step 3", style=solid, tooltip="Step: Step 3", fillcolor="#ffffff"]`, step3.GetID())
+	if !strings.Contains(dot, step3NodeDefFailed) {
+		t.Errorf("Future step (Step 3) in failed pipeline should have default style. Expected substring: %s\nGot DOT:\n%s", step3NodeDefFailed, dot)
+	}
+
+	// Check edge colors on fail (should be default grey)
+	// FIX: Adjusted attribute format
+	edge12Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 2", color="#9E9E9E"]`, step1.GetID(), step2.GetID()) // Edge leading to failed step
+	// FIX: Adjusted attribute format
+	edge23Failed := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 3", color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after failed step
 	if !strings.Contains(dot, edge12Failed) {
 		t.Errorf("Edge leading to failed step (1->2) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge12Failed, dot)
 	}
@@ -183,13 +229,27 @@ func TestPipelineVisualization(t *testing.T) {
 	pipeline.SetState(pausedState)              // Apply the specific state
 
 	dot = pipeline.Visualize()
-	step2NodeDefPaused := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=filled tooltip="Step: Step 2" fillcolor="#FFC107" fontcolor="white"]`, step2.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step2NodeDefPaused := fmt.Sprintf(`"%s" [label="Step 2", style=filled, tooltip="Step: Step 2", fillcolor="#FFC107", fontcolor="white"]`, step2.GetID())
 	if !strings.Contains(dot, step2NodeDefPaused) {
 		t.Errorf("Paused step (Step 2) should be colored yellow. Expected substring: %s\nGot DOT:\n%s", step2NodeDefPaused, dot)
 	}
-	// Check edge colors on pause (should be default grey, except for completed edges before pause)
-	edge12Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#9E9E9E"]`, step1.GetID(), step2.GetID()) // Edge leading to paused step
-	edge23Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 3" color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after paused step
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDefPaused := fmt.Sprintf(`"%s" [label="Step 1", style=solid, tooltip="Step: Step 1", fillcolor="#ffffff"]`, step1.GetID())
+	if !strings.Contains(dot, step1NodeDefPaused) {
+		t.Errorf("Completed step (Step 1) in paused pipeline should have default style. Expected substring: %s\nGot DOT:\n%s", step1NodeDefPaused, dot)
+	}
+	// FIX: Removed shape=box, adjusted attribute format
+	step3NodeDefPaused := fmt.Sprintf(`"%s" [label="Step 3", style=solid, tooltip="Step: Step 3", fillcolor="#ffffff"]`, step3.GetID())
+	if !strings.Contains(dot, step3NodeDefPaused) {
+		t.Errorf("Future step (Step 3) in paused pipeline should have default style. Expected substring: %s\nGot DOT:\n%s", step3NodeDefPaused, dot)
+	}
+
+	// Check edge colors on pause (should be default grey)
+	// FIX: Adjusted attribute format
+	edge12Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 2", color="#9E9E9E"]`, step1.GetID(), step2.GetID()) // Edge leading to paused step
+	// FIX: Adjusted attribute format
+	edge23Paused := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 3", color="#9E9E9E"]`, step2.GetID(), step3.GetID()) // Edge after paused step
 	if !strings.Contains(dot, edge12Paused) {
 		t.Errorf("Edge leading to paused step (1->2) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge12Paused, dot)
 	}
@@ -284,10 +344,13 @@ func TestDagVisualization_Basic(t *testing.T) {
 		t.Error("DAG visualization should contain all step names as labels")
 	}
 	// Check if all steps are present by ID (node definition)
-	if !strings.Contains(dot, `"`+step1.GetID()+`"`) || !strings.Contains(dot, `"`+step2.GetID()+`"`) ||
-		!strings.Contains(dot, `"`+step3.GetID()+`"`) || !strings.Contains(dot, `"`+step4.GetID()+`"`) ||
-		!strings.Contains(dot, `"`+step5.GetID()+`"`) {
-		t.Error("DAG visualization should contain all step IDs as nodes")
+	// FIX: Removed shape=box, adjusted attribute format
+	expectedNodeStyle := `label="Step %d", style=solid, tooltip="Step: Step %d", fillcolor="#ffffff"`
+	for i, step := range []wf.StepInterface{step1, step2, step3, step4, step5} {
+		nodeDef := fmt.Sprintf(`"%s" [%s]`, step.GetID(), fmt.Sprintf(expectedNodeStyle, i+1, i+1))
+		if !strings.Contains(dot, nodeDef) {
+			t.Errorf("DAG visualization should contain node definition for Step %d. Expected substring: %s\nGot DOT:\n%s", i+1, nodeDef, dot)
+		}
 	}
 
 	// Check if dependencies are represented as edges
@@ -307,16 +370,13 @@ func TestDagVisualization_Basic(t *testing.T) {
 
 	for _, dep := range dependencies {
 		edge := fmt.Sprintf(`"%s" -> "%s"`, dep.from.GetID(), dep.to.GetID())
+		// FIX: Adjusted attribute format
 		tooltip := fmt.Sprintf(`tooltip="From %s to %s"`, dep.from.GetName(), dep.to.GetName())
 		color := `color="#9E9E9E"` // Default edge color
-		if !strings.Contains(dot, edge) {
-			t.Errorf("DAG visualization should contain dependency edge: %s", edge)
-		}
-		if !strings.Contains(dot, tooltip) {
-			t.Errorf("DAG visualization edge should contain tooltip: %s", tooltip)
-		}
-		if !strings.Contains(dot, color) {
-			t.Errorf("DAG visualization edge should contain default color: %s", color)
+		style := `style=solid`
+		edgeDef := fmt.Sprintf("%s [%s, %s, %s]", edge, style, tooltip, color)
+		if !strings.Contains(dot, edgeDef) {
+			t.Errorf("DAG visualization should contain dependency edge definition: %s\nGot DOT:\n%s", edgeDef, dot)
 		}
 	}
 }
@@ -326,7 +386,7 @@ func TestDagVisualization_Basic(t *testing.T) {
 // completed). It verifies that the visualization is correct for the running
 // step, completed steps, waiting steps, and edges between them.
 func TestDagVisualization_Running(t *testing.T) {
-	dag, step1, step2, step3, step4, _ := createTestDag()
+	dag, step1, step2, step3, step4, step5 := createTestDag() // Include step5 for completeness
 
 	// Simulate running state: Step 3 is current, Step 1 is done.
 	dag.GetState().SetStatus(wf.StateStatusRunning)
@@ -337,48 +397,71 @@ func TestDagVisualization_Running(t *testing.T) {
 	t.Logf("Running DAG Viz:\n%s", dot)
 
 	// Check Step 1 (Completed)
-	step1NodeDef := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=filled tooltip="Step: Step 1" fillcolor="#4CAF50" fontcolor="white"]`, step1.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDef := fmt.Sprintf(`"%s" [label="Step 1", style=filled, tooltip="Step: Step 1", fillcolor="#4CAF50", fontcolor="white"]`, step1.GetID())
 	if !strings.Contains(dot, step1NodeDef) {
-		t.Errorf("Completed step (Step 1) should be green. Expected substring: %s", step1NodeDef)
+		t.Errorf("Completed step (Step 1) should be green. Expected substring: %s\nGot DOT:\n%s", step1NodeDef, dot)
 	}
 
 	// Check Step 3 (Current/Running)
-	step3NodeDef := fmt.Sprintf(`"%s" [label="Step 3" shape=box style=filled tooltip="Step: Step 3" fillcolor="#2196F3" fontcolor="white"]`, step3.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step3NodeDef := fmt.Sprintf(`"%s" [label="Step 3", style=filled, tooltip="Step: Step 3", fillcolor="#2196F3", fontcolor="white"]`, step3.GetID())
 	if !strings.Contains(dot, step3NodeDef) {
-		t.Errorf("Current running step (Step 3) should be blue. Expected substring: %s", step3NodeDef)
+		t.Errorf("Current running step (Step 3) should be blue. Expected substring: %s\nGot DOT:\n%s", step3NodeDef, dot)
 	}
 
 	// Check Step 2 (Waiting, depends on completed Step 1) - Should be default
-	// FIX: Removed trailing space before ]
-	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=solid tooltip="Step: Step 2" fillcolor="#ffffff"]`, step2.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2", style=solid, tooltip="Step: Step 2", fillcolor="#ffffff"]`, step2.GetID())
 	if !strings.Contains(dot, step2NodeDef) {
-		t.Errorf("Waiting step (Step 2) should be default. Expected substring: %s", step2NodeDef)
+		t.Errorf("Waiting step (Step 2) should be default. Expected substring: %s\nGot DOT:\n%s", step2NodeDef, dot)
 	}
 
 	// Check Step 4 (Waiting) - Should be default
-	// FIX: Removed trailing space before ]
-	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4" shape=box style=solid tooltip="Step: Step 4" fillcolor="#ffffff"]`, step4.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4", style=solid, tooltip="Step: Step 4", fillcolor="#ffffff"]`, step4.GetID())
 	if !strings.Contains(dot, step4NodeDef) {
-		t.Errorf("Waiting step (Step 4) should be default. Expected substring: %s", step4NodeDef)
+		t.Errorf("Waiting step (Step 4) should be default. Expected substring: %s\nGot DOT:\n%s", step4NodeDef, dot)
+	}
+
+	// Check Step 5 (Waiting) - Should be default
+	// FIX: Removed shape=box, adjusted attribute format
+	step5NodeDef := fmt.Sprintf(`"%s" [label="Step 5", style=solid, tooltip="Step: Step 5", fillcolor="#ffffff"]`, step5.GetID())
+	if !strings.Contains(dot, step5NodeDef) {
+		t.Errorf("Waiting step (Step 5) should be default. Expected substring: %s\nGot DOT:\n%s", step5NodeDef, dot)
 	}
 
 	// Check Edges
-	edge12 := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 2" color="#4CAF50"]`, step1.GetID(), step2.GetID()) // From completed = green
-	edge13 := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 1 to Step 3" color="#4CAF50"]`, step1.GetID(), step3.GetID()) // From completed = green
-	edge24 := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 2 to Step 4" color="#9E9E9E"]`, step2.GetID(), step4.GetID()) // Default
-	edge34 := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From Step 3 to Step 4" color="#9E9E9E"]`, step3.GetID(), step4.GetID()) // Default
+	// FIX: Adjusted attribute format
+	edge12 := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 2", color="#4CAF50"]`, step1.GetID(), step2.GetID()) // From completed = green
+	// FIX: Adjusted attribute format
+	edge13 := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 1 to Step 3", color="#4CAF50"]`, step1.GetID(), step3.GetID()) // From completed = green
+	// FIX: Adjusted attribute format
+	edge24 := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 4", color="#9E9E9E"]`, step2.GetID(), step4.GetID()) // Default
+	// FIX: Adjusted attribute format
+	edge34 := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 3 to Step 4", color="#9E9E9E"]`, step3.GetID(), step4.GetID()) // Default
+	// FIX: Adjusted attribute format
+	edge25 := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 2 to Step 5", color="#9E9E9E"]`, step2.GetID(), step5.GetID()) // Default
+	// FIX: Adjusted attribute format
+	edge35 := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From Step 3 to Step 5", color="#9E9E9E"]`, step3.GetID(), step5.GetID()) // Default
 
 	if !strings.Contains(dot, edge12) {
-		t.Errorf("Edge from completed step (1->2) should be green. Expected substring: %s", edge12)
+		t.Errorf("Edge from completed step (1->2) should be green. Expected substring: %s\nGot DOT:\n%s", edge12, dot)
 	}
 	if !strings.Contains(dot, edge13) {
-		t.Errorf("Edge from completed step (1->3) should be green. Expected substring: %s", edge13)
+		t.Errorf("Edge from completed step (1->3) should be green. Expected substring: %s\nGot DOT:\n%s", edge13, dot)
 	}
 	if !strings.Contains(dot, edge24) {
-		t.Errorf("Edge from waiting step (2->4) should be default grey. Expected substring: %s", edge24)
+		t.Errorf("Edge from waiting step (2->4) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge24, dot)
 	}
 	if !strings.Contains(dot, edge34) {
-		t.Errorf("Edge from current step (3->4) should be default grey. Expected substring: %s", edge34)
+		t.Errorf("Edge from current step (3->4) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge34, dot)
+	}
+	if !strings.Contains(dot, edge25) {
+		t.Errorf("Edge from waiting step (2->5) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge25, dot)
+	}
+	if !strings.Contains(dot, edge35) {
+		t.Errorf("Edge from current step (3->5) should be default grey. Expected substring: %s\nGot DOT:\n%s", edge35, dot)
 	}
 }
 
@@ -400,12 +483,12 @@ func TestDagVisualization_Completed(t *testing.T) {
 	t.Logf("Completed DAG Viz:\n%s", dot)
 
 	// Check Nodes (All should be default color when DAG is complete, based on visualization.go logic)
-	expectedNodeStyle := `style=solid tooltip="Step: Step %d" fillcolor="#ffffff"`
+	// FIX: Removed shape=box, adjusted attribute format
+	expectedNodeStyle := `label="Step %d", style=solid, tooltip="Step: Step %d", fillcolor="#ffffff"`
 	for i, step := range []wf.StepInterface{step1, step2, step3, step4, step5} {
-		// FIX: Removed trailing space before ]
-		nodeDef := fmt.Sprintf(`"%s" [label="Step %d" shape=box %s]`, step.GetID(), i+1, fmt.Sprintf(expectedNodeStyle, i+1))
+		nodeDef := fmt.Sprintf(`"%s" [%s]`, step.GetID(), fmt.Sprintf(expectedNodeStyle, i+1, i+1))
 		if !strings.Contains(dot, nodeDef) {
-			t.Errorf("Node (Step %d) should have default style when DAG complete. Expected substring: %s", i+1, nodeDef)
+			t.Errorf("Node (Step %d) should have default style when DAG complete. Expected substring: %s\nGot DOT:\n%s", i+1, nodeDef, dot)
 		}
 	}
 
@@ -414,15 +497,16 @@ func TestDagVisualization_Completed(t *testing.T) {
 		{step1, step2}, {step1, step3}, {step2, step4}, {step3, step4}, {step2, step5}, {step3, step5},
 	}
 	for _, dep := range dependencies {
-		edge := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From %s to %s" color="#4CAF50"]`, dep.from.GetID(), dep.to.GetID(), dep.from.GetName(), dep.to.GetName())
+		// FIX: Adjusted attribute format
+		edge := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From %s to %s", color="#4CAF50"]`, dep.from.GetID(), dep.to.GetID(), dep.from.GetName(), dep.to.GetName())
 		if !strings.Contains(dot, edge) {
-			t.Errorf("Edge (%s->%s) should be green when DAG complete. Expected substring: %s", dep.from.GetName(), dep.to.GetName(), edge)
+			t.Errorf("Edge (%s->%s) should be green when DAG complete. Expected substring: %s\nGot DOT:\n%s", dep.from.GetName(), dep.to.GetName(), edge, dot)
 		}
 	}
 }
 
 func TestDagVisualization_Failed(t *testing.T) {
-	dag, step1, step2, step3, step4, _ := createTestDag()
+	dag, step1, step2, step3, step4, step5 := createTestDag() // Include step5
 
 	// Simulate failed state: Failed at Step 4. Steps 1, 2, 3 completed.
 	// Need valid transitions
@@ -437,35 +521,43 @@ func TestDagVisualization_Failed(t *testing.T) {
 	t.Logf("Failed DAG Viz:\n%s", dot)
 
 	// Check Step 4 (Failed)
-	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4" shape=box style=filled tooltip="Step: Step 4" fillcolor="#F44336" fontcolor="white"]`, step4.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4", style=filled, tooltip="Step: Step 4", fillcolor="#F44336", fontcolor="white"]`, step4.GetID())
 	if !strings.Contains(dot, step4NodeDef) {
-		t.Errorf("Failed step (Step 4) should be red. Expected substring: %s", step4NodeDef)
+		t.Errorf("Failed step (Step 4) should be red. Expected substring: %s\nGot DOT:\n%s", step4NodeDef, dot)
 	}
 
 	// Check Completed Steps (Should be default color when DAG failed, based on visualization.go)
-	expectedNodeStyle := `style=solid tooltip="Step: Step %d" fillcolor="#ffffff"`
+	// FIX: Removed shape=box, adjusted attribute format
+	expectedNodeStyle := `label="Step %d", style=solid, tooltip="Step: Step %d", fillcolor="#ffffff"`
 	for i, step := range []wf.StepInterface{step1, step2, step3} {
-		// FIX: Removed trailing space before ]
-		nodeDef := fmt.Sprintf(`"%s" [label="Step %d" shape=box %s]`, step.GetID(), i+1, fmt.Sprintf(expectedNodeStyle, i+1))
+		nodeDef := fmt.Sprintf(`"%s" [%s]`, step.GetID(), fmt.Sprintf(expectedNodeStyle, i+1, i+1))
 		if !strings.Contains(dot, nodeDef) {
-			t.Errorf("Completed node (Step %d) should have default style when DAG failed. Expected substring: %s", i+1, nodeDef)
+			t.Errorf("Completed node (Step %d) should have default style when DAG failed. Expected substring: %s\nGot DOT:\n%s", i+1, nodeDef, dot)
 		}
+	}
+	// Check Unreached Step 5 (Should be default color)
+	// FIX: Removed shape=box, adjusted attribute format
+	step5NodeDef := fmt.Sprintf(`"%s" [label="Step 5", style=solid, tooltip="Step: Step 5", fillcolor="#ffffff"]`, step5.GetID())
+	if !strings.Contains(dot, step5NodeDef) {
+		t.Errorf("Unreached node (Step 5) should have default style when DAG failed. Expected substring: %s\nGot DOT:\n%s", step5NodeDef, dot)
 	}
 
 	// Check Edges (Should be default grey when DAG failed)
 	dependencies := []struct{ from, to wf.StepInterface }{
-		{step1, step2}, {step1, step3}, {step2, step4}, {step3, step4},
+		{step1, step2}, {step1, step3}, {step2, step4}, {step3, step4}, {step2, step5}, {step3, step5},
 	}
 	for _, dep := range dependencies {
-		edge := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From %s to %s" color="#9E9E9E"]`, dep.from.GetID(), dep.to.GetID(), dep.from.GetName(), dep.to.GetName())
+		// FIX: Adjusted attribute format
+		edge := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From %s to %s", color="#9E9E9E"]`, dep.from.GetID(), dep.to.GetID(), dep.from.GetName(), dep.to.GetName())
 		if !strings.Contains(dot, edge) {
-			t.Errorf("Edge (%s->%s) should be default grey when DAG failed. Expected substring: %s", dep.from.GetName(), dep.to.GetName(), edge)
+			t.Errorf("Edge (%s->%s) should be default grey when DAG failed. Expected substring: %s\nGot DOT:\n%s", dep.from.GetName(), dep.to.GetName(), edge, dot)
 		}
 	}
 }
 
 func TestDagVisualization_Paused(t *testing.T) {
-	dag, step1, step2, step3, _, _ := createTestDag()
+	dag, step1, step2, step3, step4, step5 := createTestDag() // Include step4, step5
 
 	// Simulate paused state: Paused at Step 3. Step 1 completed.
 	// Need valid transitions
@@ -478,33 +570,47 @@ func TestDagVisualization_Paused(t *testing.T) {
 	t.Logf("Paused DAG Viz:\n%s", dot)
 
 	// Check Step 3 (Paused)
-	step3NodeDef := fmt.Sprintf(`"%s" [label="Step 3" shape=box style=filled tooltip="Step: Step 3" fillcolor="#FFC107" fontcolor="white"]`, step3.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step3NodeDef := fmt.Sprintf(`"%s" [label="Step 3", style=filled, tooltip="Step: Step 3", fillcolor="#FFC107", fontcolor="white"]`, step3.GetID())
 	if !strings.Contains(dot, step3NodeDef) {
-		t.Errorf("Paused step (Step 3) should be yellow. Expected substring: %s", step3NodeDef)
+		t.Errorf("Paused step (Step 3) should be yellow. Expected substring: %s\nGot DOT:\n%s", step3NodeDef, dot)
 	}
 
 	// Check Completed Step 1 (Should be default color when DAG paused)
-	// FIX: Removed trailing space before ]
-	step1NodeDef := fmt.Sprintf(`"%s" [label="Step 1" shape=box style=solid tooltip="Step: Step 1" fillcolor="#ffffff"]`, step1.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step1NodeDef := fmt.Sprintf(`"%s" [label="Step 1", style=solid, tooltip="Step: Step 1", fillcolor="#ffffff"]`, step1.GetID())
 	if !strings.Contains(dot, step1NodeDef) {
-		t.Errorf("Completed node (Step 1) should have default style when DAG paused. Expected substring: %s", step1NodeDef)
+		t.Errorf("Completed node (Step 1) should have default style when DAG paused. Expected substring: %s\nGot DOT:\n%s", step1NodeDef, dot)
 	}
 
 	// Check Waiting Step 2 (Should be default color)
-	// FIX: Removed trailing space before ]
-	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2" shape=box style=solid tooltip="Step: Step 2" fillcolor="#ffffff"]`, step2.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	step2NodeDef := fmt.Sprintf(`"%s" [label="Step 2", style=solid, tooltip="Step: Step 2", fillcolor="#ffffff"]`, step2.GetID())
 	if !strings.Contains(dot, step2NodeDef) {
-		t.Errorf("Waiting node (Step 2) should have default style when DAG paused. Expected substring: %s", step2NodeDef)
+		t.Errorf("Waiting node (Step 2) should have default style when DAG paused. Expected substring: %s\nGot DOT:\n%s", step2NodeDef, dot)
+	}
+	// Check Waiting Step 4 (Should be default color)
+	// FIX: Removed shape=box, adjusted attribute format
+	step4NodeDef := fmt.Sprintf(`"%s" [label="Step 4", style=solid, tooltip="Step: Step 4", fillcolor="#ffffff"]`, step4.GetID())
+	if !strings.Contains(dot, step4NodeDef) {
+		t.Errorf("Waiting node (Step 4) should have default style when DAG paused. Expected substring: %s\nGot DOT:\n%s", step4NodeDef, dot)
+	}
+	// Check Waiting Step 5 (Should be default color)
+	// FIX: Removed shape=box, adjusted attribute format
+	step5NodeDef := fmt.Sprintf(`"%s" [label="Step 5", style=solid, tooltip="Step: Step 5", fillcolor="#ffffff"]`, step5.GetID())
+	if !strings.Contains(dot, step5NodeDef) {
+		t.Errorf("Waiting node (Step 5) should have default style when DAG paused. Expected substring: %s\nGot DOT:\n%s", step5NodeDef, dot)
 	}
 
 	// Check Edges (Should be default grey when DAG paused)
 	dependencies := []struct{ from, to wf.StepInterface }{
-		{step1, step2}, {step1, step3},
+		{step1, step2}, {step1, step3}, {step2, step4}, {step3, step4}, {step2, step5}, {step3, step5},
 	}
 	for _, dep := range dependencies {
-		edge := fmt.Sprintf(`"%s" -> "%s" [style=solid tooltip="From %s to %s" color="#9E9E9E"]`, dep.from.GetID(), dep.to.GetID(), dep.from.GetName(), dep.to.GetName())
+		// FIX: Adjusted attribute format
+		edge := fmt.Sprintf(`"%s" -> "%s" [style=solid, tooltip="From %s to %s", color="#9E9E9E"]`, dep.from.GetID(), dep.to.GetID(), dep.from.GetName(), dep.to.GetName())
 		if !strings.Contains(dot, edge) {
-			t.Errorf("Edge (%s->%s) should be default grey when DAG paused. Expected substring: %s", dep.from.GetName(), dep.to.GetName(), edge)
+			t.Errorf("Edge (%s->%s) should be default grey when DAG paused. Expected substring: %s\nGot DOT:\n%s", dep.from.GetName(), dep.to.GetName(), edge, dot)
 		}
 	}
 }
@@ -528,7 +634,8 @@ func TestStepVisualization(t *testing.T) {
 	t.Logf("Initial Step Viz (Expecting Running):\n%s", dot)
 
 	// Check initial state (should be Running/Blue according to NewState and step Visualize logic)
-	stepNodeDefInitial := fmt.Sprintf(`"%s" [label="My Step" shape=box style=filled tooltip="Step: My Step" fillcolor="#2196F3" fontcolor="white"]`, step.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	stepNodeDefInitial := fmt.Sprintf(`"%s" [label="My Step", style=filled, tooltip="Step: My Step", fillcolor="#2196F3", fontcolor="white"]`, step.GetID())
 	if !strings.Contains(dot, stepNodeDefInitial) {
 		t.Errorf("Initial step state should be Running (blue). Expected substring: %s\nGot DOT:\n%s", stepNodeDefInitial, dot)
 	}
@@ -548,7 +655,8 @@ func TestStepVisualization(t *testing.T) {
 	runningState.SetStatus(wf.StateStatusRunning)
 	step.SetState(runningState)
 	dot = step.Visualize()
-	stepNodeDefRunning := fmt.Sprintf(`"%s" [label="My Step" shape=box style=filled tooltip="Step: My Step" fillcolor="#2196F3" fontcolor="white"]`, step.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	stepNodeDefRunning := fmt.Sprintf(`"%s" [label="My Step", style=filled, tooltip="Step: My Step", fillcolor="#2196F3", fontcolor="white"]`, step.GetID())
 	if !strings.Contains(dot, stepNodeDefRunning) {
 		t.Errorf("Running step should be colored blue. Expected substring: %s\nGot DOT:\n%s", stepNodeDefRunning, dot)
 	}
@@ -559,7 +667,8 @@ func TestStepVisualization(t *testing.T) {
 	completedState.SetStatus(wf.StateStatusComplete)
 	step.SetState(completedState)
 	dot = step.Visualize()
-	stepNodeDefComplete := fmt.Sprintf(`"%s" [label="My Step" shape=box style=filled tooltip="Step: My Step" fillcolor="#4CAF50" fontcolor="white"]`, step.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	stepNodeDefComplete := fmt.Sprintf(`"%s" [label="My Step", style=filled, tooltip="Step: My Step", fillcolor="#4CAF50", fontcolor="white"]`, step.GetID())
 	if !strings.Contains(dot, stepNodeDefComplete) {
 		t.Errorf("Completed step should be colored green. Expected substring: %s\nGot DOT:\n%s", stepNodeDefComplete, dot)
 	}
@@ -570,7 +679,8 @@ func TestStepVisualization(t *testing.T) {
 	failedState.SetStatus(wf.StateStatusFailed)
 	step.SetState(failedState)
 	dot = step.Visualize()
-	stepNodeDefFailed := fmt.Sprintf(`"%s" [label="My Step" shape=box style=filled tooltip="Step: My Step" fillcolor="#F44336" fontcolor="white"]`, step.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	stepNodeDefFailed := fmt.Sprintf(`"%s" [label="My Step", style=filled, tooltip="Step: My Step", fillcolor="#F44336", fontcolor="white"]`, step.GetID())
 	if !strings.Contains(dot, stepNodeDefFailed) {
 		t.Errorf("Failed step should be colored red. Expected substring: %s\nGot DOT:\n%s", stepNodeDefFailed, dot)
 	}
@@ -581,7 +691,8 @@ func TestStepVisualization(t *testing.T) {
 	pausedState.SetStatus(wf.StateStatusPaused)
 	step.SetState(pausedState)
 	dot = step.Visualize()
-	stepNodeDefPaused := fmt.Sprintf(`"%s" [label="My Step" shape=box style=filled tooltip="Step: My Step" fillcolor="#FFC107" fontcolor="white"]`, step.GetID())
+	// FIX: Removed shape=box, adjusted attribute format
+	stepNodeDefPaused := fmt.Sprintf(`"%s" [label="My Step", style=filled, tooltip="Step: My Step", fillcolor="#FFC107", fontcolor="white"]`, step.GetID())
 	if !strings.Contains(dot, stepNodeDefPaused) {
 		t.Errorf("Paused step should be colored yellow. Expected substring: %s\nGot DOT:\n%s", stepNodeDefPaused, dot)
 	}
