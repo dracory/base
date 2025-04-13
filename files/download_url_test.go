@@ -1,9 +1,7 @@
 package files_test
 
 import (
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,31 +11,6 @@ import (
 
 	"github.com/dracory/base/files" // Adjust this import path if necessary
 )
-
-// mockReaderCloser simulates an io.ReadCloser that can return errors on Read.
-type mockReaderCloser struct {
-	reader  io.Reader
-	readErr error
-	closed  bool
-}
-
-func (m *mockReaderCloser) Read(p []byte) (n int, err error) {
-	if m.closed {
-		return 0, errors.New("read on closed reader")
-	}
-	if m.readErr != nil {
-		return 0, m.readErr
-	}
-	if m.reader == nil {
-		return 0, io.EOF
-	}
-	return m.reader.Read(p)
-}
-
-func (m *mockReaderCloser) Close() error {
-	m.closed = true
-	return nil
-}
 
 func TestDownloadURL_Success(t *testing.T) {
 	expectedContent := "This is the file content from the server."
