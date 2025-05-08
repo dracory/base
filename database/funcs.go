@@ -18,10 +18,12 @@ func IsQueryableContext(ctx context.Context) bool {
 }
 
 // Context returns a new context with the given QueryableInterface.
-// It is a shortcut for NewQueryableContext.
+// This is a direct alias/shortcut for NewQueryableContext.
 //
 // Example:
 // 	ctx := database.Context(context.Background(), tx)
+// 	// is identical to
+// 	ctx := database.NewQueryableContext(context.Background(), tx)
 //
 // Parameters:
 // - ctx: The parent context.
@@ -35,12 +37,14 @@ func Context(ctx context.Context, queryable QueryableInterface) QueryableContext
 
 // ContextOr returns the existing QueryableContext if the provided context
 // is already a QueryableContext, or creates a new one with the given QueryableInterface.
-// This is useful when you want to accept either a regular context or a queryable context.
+// This is a direct alias/shortcut for NewQueryableContextOr.
 //
 // Example:
 // 	// This will use the existing QueryableContext if ctx is already one,
 // 	// or create a new one with db if it's not
 // 	qCtx := database.ContextOr(ctx, db)
+// 	// is identical to
+// 	qCtx := database.NewQueryableContextOr(ctx, db)
 //
 // Parameters:
 // - ctx: The parent context, which may or may not be a QueryableContext.
@@ -49,9 +53,5 @@ func Context(ctx context.Context, queryable QueryableInterface) QueryableContext
 // Returns:
 // - QueryableContext: Either the existing QueryableContext or a new one.
 func ContextOr(ctx context.Context, queryable QueryableInterface) QueryableContext {
-	if IsQueryableContext(ctx) {
-		return ctx.(QueryableContext)
-	}
-
-	return NewQueryableContext(ctx, queryable)
+	return NewQueryableContextOr(ctx, queryable)
 }

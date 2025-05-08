@@ -6,7 +6,23 @@ import (
 )
 
 // NewQueryableContext returns a new context with the given QueryableInterface.
+//
+// Note: For convenience, a shortcut alias function 'Context' is provided in funcs.go
+// that calls this function with the same parameters.
 func NewQueryableContext(ctx context.Context, queryable QueryableInterface) QueryableContext {
+	return QueryableContext{Context: ctx, queryable: queryable}
+}
+
+// NewQueryableContextOr returns the existing QueryableContext if the provided context
+// is already a QueryableContext, or creates a new one with the given QueryableInterface.
+//
+// Note: For convenience, a shortcut alias function 'ContextOr' is provided in funcs.go
+// that calls this function with the same parameters.
+func NewQueryableContextOr(ctx context.Context, queryable QueryableInterface) QueryableContext {
+	if qCtx, ok := ctx.(QueryableContext); ok {
+		return qCtx
+	}
+
 	return QueryableContext{Context: ctx, queryable: queryable}
 }
 

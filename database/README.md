@@ -11,25 +11,44 @@ It can be used to interact with various database systems.
 
 ## Core Functions
 
-### Context and ContextOr
+### Context Functions Hierarchy
 
-The database package provides two key functions for working with database contexts:
+The database package provides a complete hierarchy of functions for working with database contexts:
 
-- **Context**: Creates a new queryable context with the given database connection or transaction
+#### Low-level Constructor Functions
+
+- **NewQueryableContext**: Core constructor that creates a new queryable context
   ```go
-  // Create a queryable context with a database connection
+  // Always creates a new QueryableContext with the given database connection
+  qCtx := database.NewQueryableContext(context.Background(), db)
+  ```
+
+- **NewQueryableContextOr**: Core implementation that preserves existing queryable contexts
+  ```go
+  // If ctx is already a QueryableContext, returns it as is
+  // Otherwise creates a new one
+  qCtx := database.NewQueryableContextOr(ctx, db)
+  ```
+
+#### User-friendly Shortcut Aliases
+
+The following functions are simply shortcut aliases for the core functions above. They provide the same functionality with shorter, more memorable names:
+
+- **Context**: Direct alias for NewQueryableContext - always creates a new context
+  ```go
+  // These two lines are functionally identical:
   dbCtx := database.Context(context.Background(), db)
-  
-  // Create a queryable context with a transaction
-  txCtx := database.Context(context.Background(), tx)
+  dbCtx := database.NewQueryableContext(context.Background(), db)
   ```
 
-- **ContextOr**: Intelligently handles contexts that may or may not already be queryable contexts
+- **ContextOr**: Direct alias for NewQueryableContextOr - preserves existing contexts
   ```go
-  // If ctx is already a queryable context, it will be returned as is
-  // If not, a new queryable context with db will be created
+  // These two lines are functionally identical:
   qCtx := database.ContextOr(ctx, db)
+  qCtx := database.NewQueryableContextOr(ctx, db)
   ```
+
+These aliases are provided for convenience and to make code more readable. The underlying implementation is in the core functions.
 
 ## Example
 
