@@ -114,7 +114,7 @@ func dsn(
 	}
 
 	if strings.EqualFold(driver, DATABASE_TYPE_POSTGRES) {
-		if sslMode != "" {
+		if sslMode == "" {
 			sslMode = `disable`
 		}
 		dsn := `host=` + host
