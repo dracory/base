@@ -123,6 +123,7 @@ func dsn(
 		dsn += ` dbname=` + databaseName
 		dsn += ` port=` + port
 		dsn += ` sslmode=` + sslMode
+		dsn += ` binary_parameters=yes`
 		dsn += ` TimeZone=` + timezone
 		return dsn
 	}
