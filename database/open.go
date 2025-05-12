@@ -55,8 +55,9 @@ func Open(options openOptionsInterface) (*sql.DB, error) {
 	pass := options.Password()
 	timezone := options.TimeZone()
 	charset := options.Charset()
+	sslMode := options.SSLMode()
 
-	dsn := dsn(databaseType, databaseName, user, pass, host, port, timezone, charset)
+	dsn := dsn(databaseType, databaseName, user, pass, host, port, timezone, charset, sslMode)
 
 	db, err = sql.Open(databaseType, dsn)
 
@@ -97,6 +98,7 @@ func dsn(
 	port string,
 	timezone string,
 	charset string,
+	sslMode string,
 ) string {
 	if strings.EqualFold(driver, DATABASE_TYPE_SQLITE) {
 		return databaseName
@@ -112,12 +114,15 @@ func dsn(
 	}
 
 	if strings.EqualFold(driver, DATABASE_TYPE_POSTGRES) {
+		if sslMode != "" {
+			sslMode = `disable`
+		}
 		dsn := `host=` + host
 		dsn += ` user=` + user
 		dsn += ` password=` + pass
 		dsn += ` dbname=` + databaseName
 		dsn += ` port=` + port
-		dsn += ` sslmode=disable`
+		dsn += ` sslmode=` + sslMode
 		dsn += ` TimeZone=` + timezone
 		return dsn
 	}
@@ -133,6 +138,9 @@ func Options() openOptionsInterface {
 
 type openOptions struct {
 	properties map[string]interface{}
+
+	isSSLModeSet bool
+	sslMode      string
 }
 
 func (o *openOptions) Verify() error {
@@ -292,6 +300,20 @@ func (o *openOptions) SetCharset(charset string) openOptionsInterface {
 	return o
 }
 
+func (o *openOptions) SSLMode() string {
+	return o.sslMode
+}
+
+func (o *openOptions) HasSSLMode() bool {
+	return o.isSSLModeSet
+}
+
+func (o *openOptions) SetSSLMode(sslMode string) openOptionsInterface {
+	o.sslMode = sslMode
+	o.isSSLModeSet = true
+	return o
+}
+
 func (o *openOptions) TimeZone() string {
 	return o.get("time_zone").(string)
 }
@@ -329,26 +351,53 @@ type openOptionsInterface interface {
 	DatabaseType() string
 	HasDatabaseType() bool
 	SetDatabaseType(string) openOptionsInterface
+
 	DatabaseHost() string
 	HasDatabaseHost() bool
 	SetDatabaseHost(string) openOptionsInterface
+
 	DatabasePort() string
 	HasDatabasePort() bool
 	SetDatabasePort(string) openOptionsInterface
+
 	DatabaseName() string
 	HasDatabaseName() bool
 	SetDatabaseName(string) openOptionsInterface
+
 	UserName() string
 	HasUserName() bool
 	SetUserName(string) openOptionsInterface
+
 	Password() string
 	HasPassword() bool
 	SetPassword(string) openOptionsInterface
+
+	// Charset specifies the character set to use when connecting to the database. It is only used for MySQL
 	Charset() string
+
+	// HasCharset returns true if the Charset property is set. It is only used for MySQL
 	HasCharset() bool
+
+	// SetCharset sets the Charset property. It is only used for MySQL
 	SetCharset(string) openOptionsInterface
+
+	// SSLMode specifies the SSL mode to use when connecting to the database. It is only used for Postgres
+	SSLMode() string
+
+	// HasSSLMode returns true if the SSLMode property is set. It is only used for Postgres
+	HasSSLMode() bool
+
+	// SetSSLMode sets the SSLMode property. It is only used for Postgres
+	SetSSLMode(string) openOptionsInterface
+
+	// TimeZone specifies the time zone to use when connecting to the database.
 	TimeZone() string
+
+	// HasTimeZone returns true if the TimeZone property is set.
 	HasTimeZone() bool
+
+	// SetTimeZone sets the TimeZone property.
 	SetTimeZone(string) openOptionsInterface
+
 	Verify() error
 }
