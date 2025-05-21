@@ -30,6 +30,8 @@ func Execute(ctx QueryableContext, sqlStr string, args ...any) (sql.Result, erro
 		return nil, errors.New("querier (db/tx/conn) is nil")
 	}
 
+	ctx = NewQueryableContextOr(ctx, ctx.queryable)
+
 	// Execute the query
 	return ctx.queryable.ExecContext(ctx, sqlStr, args...)
 }

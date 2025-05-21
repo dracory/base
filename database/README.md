@@ -50,6 +50,23 @@ The following functions are simply shortcut aliases for the core functions above
 
 These aliases are provided for convenience and to make code more readable. The underlying implementation is in the core functions.
 
+### Context Handling
+
+All database functions that accept a `QueryableContext` automatically ensure the context is properly wrapped with the queryable interface. This means you can pass a regular context directly to these functions without explicitly wrapping it with `ContextOr`:
+
+```go
+// These two approaches are now equivalent:
+
+// Explicit context wrapping (still works)
+dbCtx := database.ContextOr(ctx, db)
+result, err := database.Execute(dbCtx, "UPDATE users SET name = ?", "John Doe")
+
+// Simplified approach (recommended)
+result, err := database.Execute(ctx, "UPDATE users SET name = ?", "John Doe")
+```
+
+This simplification applies to all database functions that accept a `QueryableContext` parameter, including `Execute`, `Query`, `SelectToMapAny`, and `SelectToMapString`.
+
 ## Example
 
 - Example of opening a database connection
@@ -79,16 +96,14 @@ defer db.Close()
 
 ```go
 // using DB
-dbCtx := Context(context.Background(), db)
-rows, err := Query(dbCtx, "SELECT * FROM users")
+rows, err := Query(context.Background(), "SELECT * FROM users")
 if err != nil {
      log.Fatalf("Failed to execute query: %v", err)
 }
 defer rows.Close()
 
 // using transaction
-txCtx := Context(context.Background(), tx)
-rows, err := Query(txCtx, "SELECT * FROM users")
+rows, err := Query(context.Background(), "SELECT * FROM users")
 if err != nil {
      log.Fatalf("Failed to execute query: %v", err)
 }
@@ -98,8 +113,7 @@ defer rows.Close()
 - Example of inserting data with DB connection
 
 ```go
-dbCtx := Context(context.Background(), db)
-result, err := Execute(dbCtx, "INSERT INTO users (name, email) VALUES (?, ?)", "John Doe", "john@example.com")
+result, err := Execute(context.Background(), "INSERT INTO users (name, email) VALUES (?, ?)", "John Doe", "john@example.com")
 if err != nil {
      log.Fatalf("Failed to insert data: %v", err)
 }
@@ -114,11 +128,9 @@ if err != nil {
      log.Fatalf("Failed to begin transaction: %v", err)
 }
 
-// Create a queryable context with the transaction
-txCtx := Context(context.Background(), tx)
-
 // Execute the query within the transaction
-result, err := Execute(txCtx, "INSERT INTO users (name, email) VALUES (?, ?)", "Jane Doe", "jane@example.com")
+// Note: No need to explicitly create a QueryableContext anymore
+result, err := Execute(context.Background(), "INSERT INTO users (name, email) VALUES (?, ?)", "Jane Doe", "jane@example.com")
 if err != nil {
      // With transactions, you typically want to roll back on error
      tx.Rollback()
@@ -136,7 +148,8 @@ if err != nil {
 - Select rows (as map[string]string)
 
 ```go
-mappedRows, err := database.SelectToMapString(store.toQuerableContext(ctx), sqlStr, params...)
+// No need to explicitly create a QueryableContext anymore
+mappedRows, err := database.SelectToMapString(ctx, sqlStr, params...)
 if err != nil {
      log.Fatalf("Failed to select rows: %v", err)
 }
@@ -145,7 +158,8 @@ if err != nil {
 - Select rows (as map[string]any)
 
 ```go
-mappedRows, err := database.SelectToMapAny(store.toQuerableContext(ctx), sqlStr, params...)
+// No need to explicitly create a QueryableContext anymore
+mappedRows, err := database.SelectToMapAny(ctx, sqlStr, params...)
 if err != nil {
      log.Fatalf("Failed to select rows: %v", err)
 }

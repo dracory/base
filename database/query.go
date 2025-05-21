@@ -29,6 +29,9 @@ func Query(ctx QueryableContext, sqlStr string, args ...any) (*sql.Rows, error) 
 		return nil, errors.New("querier (db/tx/conn) is nil")
 	}
 
+	// Ensure the context is properly wrapped with the queryable
+	ctx = NewQueryableContextOr(ctx, ctx.queryable)
+
 	// Execute the query in the context
 	return ctx.queryable.QueryContext(ctx, sqlStr, args...)
 }
