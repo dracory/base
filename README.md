@@ -53,9 +53,9 @@ For more information, see the [bbkode/README.md](bbkode/README.md) file.
 ## Environment Variables
 
 The Dracory framework provides easy access to environment variables
-using the `env` package.
+using the `env` module.
 
-For information on environment variables, see the [env/README.md](env/README.md) file.
+For information on environment variables, see the [https://github.com/dracory/env](https://github.com/dracory/env) repository.
 
 ## Database
 
