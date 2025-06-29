@@ -59,10 +59,10 @@ For information on environment variables, see the [https://github.com/dracory/en
 
 ## Database
 
-The database package provides database interaction functionalities for the Dracory framework.
-It offers a set of tools for interacting with various database systems.
+The Dracory framework provides database interaction functionality
+using the `database` module.
 
-For more information, see the [database/README.md](database/README.md) file.
+For information on database functionality, see the [https://github.com/dracory/database](https://github.com/dracory/database) repository.
 
 ## Email
 
