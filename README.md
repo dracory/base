@@ -34,7 +34,7 @@ The Dracory project is a Go framework that provides various utilities, including
 - Date and datetime validation
 - Web server functionality
 - Command line functionality
-- HTTP routing with middleware support
+
 
 ## Array
 
@@ -87,10 +87,10 @@ For more information, see the [object/README.md](object/README.md) file.
 
 ## Router
 
-The router package provides HTTP routing functionality with middleware support for the Dracory framework.
-It enables building flexible and powerful web applications with clean routing patterns.
+The router functionality has been moved to a standalone package for better modularity.
+For HTTP routing with middleware support, please use the dedicated router package.
 
-For more information, see the [router/README.md](router/README.md) file.
+For more information, see [https://github.com/dracory/rtr](https://github.com/dracory/rtr).
 
 ## Server
 
