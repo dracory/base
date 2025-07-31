@@ -76,9 +76,9 @@ func Start(options Options) (server *Server, err error) {
 
 	// Log server startup
 	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
-		cfmt.Infoln("Starting server on: ", addr)
+		cfmt.Infoln("🚀 Starting server on: ", addr)
 		if options.URL != "" {
-			cfmt.Infoln("APP URL:", options.URL)
+			cfmt.Infoln("🚀 APP URL:", options.URL)
 		}
 	}
 
@@ -93,11 +93,11 @@ func Start(options Options) (server *Server, err error) {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			if options.Mode == TestingMode {
 				if options.LogLevel != LogLevelNone {
-					cfmt.Errorln(err)
+					cfmt.Errorln("❌ Error starting server:", err)
 				}
 			} else {
 				if options.LogLevel != LogLevelNone {
-					log.Fatal(err)
+					log.Fatal("❌ Error starting server:", err)
 				} else {
 					os.Exit(1)
 				}
@@ -107,20 +107,20 @@ func Start(options Options) (server *Server, err error) {
 
 	// Wait for a shutdown signal
 	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
-		cfmt.Infoln("Server is running, press Ctrl+C to stop it.")
+		cfmt.Infoln("✅ Server is now running, press Ctrl+C to stop it.")
 	}
 
 	sig := <-shutdownChan
 
 	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
-		cfmt.Infoln("Received signal:", sig)
-		cfmt.Infoln("Shutting down server...")
+		cfmt.Infoln("👋 Received signal:", sig)
+		cfmt.Infoln("👋 Shutting down server...")
 	}
 
 	// Shutdown the server
 	if err := server.Shutdown(context.Background()); err != nil {
 		if options.LogLevel != LogLevelNone {
-			cfmt.Errorln("Error shutting down server:", err)
+			cfmt.Errorln("👋 Error shutting down server:", err)
 		}
 		return nil, err
 	}
