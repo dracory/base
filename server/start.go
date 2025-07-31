@@ -78,7 +78,7 @@ func Start(options Options) (server *Server, err error) {
 	if options.LogLevel == LogLevelDebug || options.LogLevel == LogLevelInfo {
 		cfmt.Infoln("🚀 Starting server on: ", addr)
 		if options.URL != "" {
-			cfmt.Infoln("🚀 APP URL:", options.URL)
+			cfmt.Infoln("🌍 APP URL: ", options.URL)
 		}
 	}
 
