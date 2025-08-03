@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/dracory/base/str"
+	"github.com/dracory/str"
 )
 
 // TestKey is a pseudo secret test key used for testing specific unit cases
