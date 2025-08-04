@@ -112,7 +112,7 @@ For more information, see the [str/README.md](str/README.md) file.
 The test package provides utilities for testing Go applications in the Dracory ecosystem.
 It includes tools for setting up test environments, managing test databases, and testing HTTP endpoints.
 
-For more information, see the [test/README.md](test/README.md) file.
+For more information, see the [github.com/dracory/test](https://github.com/dracory/test) repository.
 
 ## Timezone
 
