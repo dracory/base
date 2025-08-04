@@ -38,10 +38,11 @@ The Dracory project is a Go framework that provides various utilities, including
 
 ## Array
 
-The array package provides a comprehensive set of utilities for working with arrays, slices, and maps in Go.
+The array package provides a comprehensive set of utilities for working
+with arrays, slices, and maps in Go.
 It offers functions for array manipulation, analysis, map operations, and iteration.
 
-For more information, see the [arr/README.md](arr/README.md) file.
+For more information, see the [github.com/dracory/arr](https://github.com/dracory/arr) repository.
 
 ## BBCode
 
