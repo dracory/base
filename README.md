@@ -121,6 +121,14 @@ It offers a simple API for handling timezone conversions with proper error handl
 
 For more information, see the [tz/README.md](tz/README.md) file.
 
+## Simple Workflow (SWF)
+
+The SWF package provides a simple, linear workflow management system.
+It is designed for straightforward, sequential workflows where steps are executed
+one after another in a predefined order.
+
+For more information, see the [github.com/dracory/swf](https://github.com/dracory/swf) repository.
+
 ## Workflow
 
 The workflow package provides a flexible and extensible framework for defining
@@ -128,12 +136,5 @@ and executing sequential operations.
 It enables creating complex workflows with steps, pipelines, and directed
 acyclic graphs (DAGs).
 
-For more information, see the [wf/README.md](wf/README.md) file.
+For more information, see the [github.com/dracory/wf](https://github.com/dracory/wf) repository.
 
-## Simple Workflow (SWF)
-
-The SWF package provides a simple, linear workflow management system.
-It is designed for straightforward, sequential workflows where steps are executed
-one after another in a predefined order.
-
-For more information, see the [swf/README.md](swf/README.md) file.
