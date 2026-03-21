@@ -1,9 +1,9 @@
 package email
 
 import (
-	"testing"
 	"log/slog"
 	"os"
+	"testing"
 )
 
 // TestSMTPSender_Send tests the Send method of SMTPSender
@@ -112,9 +112,9 @@ func TestDefaultTemplate(t *testing.T) {
 		{
 			name: "template with custom header color",
 			options: TemplateOptions{
-				Title:                "Test Email",
-				Content:              "<p>Test Content</p>",
-				AppName:              "Test App",
+				Title:                 "Test Email",
+				Content:               "<p>Test Content</p>",
+				AppName:               "Test App",
 				HeaderBackgroundColor: "#FF0000",
 			},
 			want: true,
@@ -136,7 +136,7 @@ func TestDefaultTemplate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			template := DefaultTemplate(tt.options)
-			
+
 			// Check that the template contains the expected elements
 			if tt.want {
 				if !contains(template, tt.options.Title) {
@@ -148,12 +148,12 @@ func TestDefaultTemplate(t *testing.T) {
 				if !contains(template, tt.options.AppName) {
 					t.Errorf("DefaultTemplate() template does not contain app name %v", tt.options.AppName)
 				}
-				
+
 				// Check for custom header color if specified
 				if tt.options.HeaderBackgroundColor != "" && !contains(template, tt.options.HeaderBackgroundColor) {
 					t.Errorf("DefaultTemplate() template does not contain header color %v", tt.options.HeaderBackgroundColor)
 				}
-				
+
 				// Check for header links if specified
 				for text, url := range tt.options.HeaderLinks {
 					if !contains(template, text) || !contains(template, url) {
@@ -167,5 +167,5 @@ func TestDefaultTemplate(t *testing.T) {
 
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
-	return s != "" && substr != "" && s != substr && len(s) > len(substr) && s != substr
+	return s != "" && substr != "" && s != substr && len(s) > len(substr)
 }
