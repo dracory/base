@@ -72,6 +72,13 @@ It includes SMTP email sending, responsive HTML email templates, and plain text 
 
 For more information, see the [email/README.md](email/README.md) file.
 
+## HTTP
+
+The http package provides HTTP utilities for Go applications.
+It includes functions for safely handling HTTP response bodies and other common HTTP operations.
+
+For more information, see the [http/README.md](http/README.md) file.
+
 ## Markdown
 
 The markdown package provides Markdown to HTML conversion functionality for the Dracory framework.
