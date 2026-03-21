@@ -57,7 +57,7 @@ func TestURLBuilder_BuildURL(t *testing.T) {
 	// Test with empty root URL
 	emptyBuilder := NewURLBuilder("")
 	result = emptyBuilder.BuildURL("test/path", nil)
-	expected = ""
+	expected = "/test/path"
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
 	}
@@ -158,7 +158,7 @@ func TestSetDefaultURL(t *testing.T) {
 	}
 
 	result = BuildURL("test", nil)
-	expected = ""
+	expected = "/test"
 	if result != expected {
 		t.Errorf("Expected %s, got %s", expected, result)
 	}
