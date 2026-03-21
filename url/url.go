@@ -23,7 +23,9 @@ func (ub *URLBuilder) RootURL() string {
 // BuildURL returns the full URL for a given path with optional query parameters
 func (ub *URLBuilder) BuildURL(path string, params map[string]string) string {
 	if ub.rootURL == "" {
-		return ""
+		// If no root URL is configured, return just the path with query params
+		// This is useful for testing environments
+		return "/" + strings.TrimPrefix(path, "/") + ub.BuildQuery(params)
 	}
 	return ub.rootURL + "/" + strings.TrimPrefix(path, "/") + ub.BuildQuery(params)
 }
