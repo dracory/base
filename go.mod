@@ -22,11 +22,16 @@ require (
 
 require (
 	github.com/dracory/api v1.7.0 // indirect
+	github.com/dracory/blockeditor v0.24.0 // indirect
+	github.com/dracory/bs v0.15.0 // indirect
 	github.com/dracory/cdn v1.9.0 // indirect
 	github.com/dracory/crypto v0.3.0 // indirect
 	github.com/dracory/dataobject v1.6.0 // indirect
+	github.com/dracory/form v0.21.0 // indirect
 	github.com/dracory/hb v1.88.0 // indirect
-	github.com/dracory/uid v1.8.0 // indirect
+	github.com/dracory/req v0.1.0 // indirect
+	github.com/dracory/ui v0.17.0 // indirect
+	github.com/dracory/uid v1.9.0 // indirect
 	github.com/dracory/websrv v0.1.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
