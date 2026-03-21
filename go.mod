@@ -2,11 +2,13 @@ module github.com/dracory/base
 
 go 1.26
 
+// replace github.com/dracory/envenc => ../envenc
+
 require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/darkoatanasovski/htmltags v1.0.0
 	github.com/disintegration/imaging v1.6.2
-	github.com/dracory/envenc v0.0.0
+	github.com/dracory/envenc v1.2.0
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/google/uuid v1.6.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
@@ -17,8 +19,6 @@ require (
 	golang.org/x/crypto v0.49.0
 	golang.org/x/image v0.37.0
 )
-
-replace github.com/dracory/envenc => ../envenc
 
 require (
 	github.com/dracory/api v1.7.0 // indirect
