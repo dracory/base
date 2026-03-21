@@ -6,6 +6,7 @@ require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/darkoatanasovski/htmltags v1.0.0
 	github.com/disintegration/imaging v1.6.2
+	github.com/dracory/envenc v0.0.0
 	github.com/dromara/carbon/v2 v2.6.16
 	github.com/google/uuid v1.6.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
@@ -17,10 +18,24 @@ require (
 	golang.org/x/image v0.37.0
 )
 
+replace github.com/dracory/envenc => ../envenc
+
 require (
+	github.com/dracory/api v1.7.0 // indirect
+	github.com/dracory/cdn v1.9.0 // indirect
+	github.com/dracory/crypto v0.3.0 // indirect
+	github.com/dracory/dataobject v1.6.0 // indirect
+	github.com/dracory/hb v1.88.0 // indirect
+	github.com/dracory/uid v1.8.0 // indirect
+	github.com/dracory/websrv v0.1.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mingrammer/cfmt v1.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 )
