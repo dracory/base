@@ -117,12 +117,12 @@ func TestFileExists(t *testing.T) {
 }
 
 func TestMissingEnvError(t *testing.T) {
-	err := &MissingEnvError{
+	err := MissingEnvError{
 		Key:     "TEST_KEY",
 		Context: "test context",
 	}
 
-	expected := "Missing required environment variable: TEST_KEY (test context)"
+	expected := "config: required env \"TEST_KEY\" is missing: test context"
 	if err.Error() != expected {
 		t.Errorf("MissingEnvError.Error() = %q, want %q", err.Error(), expected)
 	}
