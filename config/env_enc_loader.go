@@ -170,16 +170,6 @@ func fileExists(path string) bool {
 	}
 }
 
-// MissingEnvError represents an error when a required environment variable is missing
-type MissingEnvError struct {
-	Key     string
-	Context string
-}
-
-func (e *MissingEnvError) Error() string {
-	return "Missing required environment variable: " + e.Key + " (" + e.Context + ")"
-}
-
 // EnvEncError represents an error during environment encryption operations
 type EnvEncError struct {
 	Operation string
