@@ -83,8 +83,99 @@ The email template can be customized by providing different options to the `Defa
 
 ## Style Constants
 
-The package provides style constants for consistent email styling:
+The package provides comprehensive style constants for consistent email styling across all projects. These constants define inline CSS styles required for proper email client rendering.
 
-- `StyleHeading`: Style for headings
-- `StyleParagraph`: Style for paragraphs
-- `StyleButton`: Style for buttons
+### Typography Styles
+
+- `StyleHeading1` - Primary heading (24px, bold)
+- `StyleHeading2` - Secondary heading (20px, bold)
+- `StyleHeading3` - Tertiary heading (18px, bold)
+- `StyleParagraph` - Standard paragraph (16px, 1.6 line height)
+- `StyleSmall` - Small text for disclaimers (14px)
+
+### Button Styles
+
+- `StyleButtonPrimary` - Main call-to-action (blue background)
+- `StyleButtonSecondary` - Secondary action (outlined, no background)
+- `StyleButtonSuccess` - Positive actions (green background)
+- `StyleButtonDanger` - Destructive actions (red background)
+- `StyleButtonSmall` - Smaller button variant
+
+### Layout Styles
+
+- `StyleContainer` - Centered container (max-width 600px)
+- `StyleSection` - Content section with light background
+- `StyleDivider` - Horizontal rule/separator
+- `StyleCard` - Bordered card container
+
+### Alert Styles
+
+- `StyleAlertInfo` - Informational messages (blue)
+- `StyleAlertSuccess` - Success messages (green)
+- `StyleAlertWarning` - Warning messages (yellow)
+- `StyleAlertDanger` - Error/danger messages (red)
+
+### List Styles
+
+- `StyleListUnordered` - Unordered (bulleted) lists
+- `StyleListOrdered` - Ordered (numbered) lists
+- `StyleListItem` - Individual list items
+
+### Table Styles
+
+- `StyleTable` - Base table style
+- `StyleTableHead` - Table header cells
+- `StyleTableCell` - Table data cells
+
+### Utility Styles
+
+- `StyleTextCenter` - Center text horizontally
+- `StyleTextRight` - Align text to the right
+- `StyleTextMuted` - Muted/secondary text (gray)
+- `StyleTextPrimary` - Primary brand color text (blue)
+- `StyleTextSuccess` - Success state text (green)
+- `StyleTextDanger` - Danger/error state text (red)
+- `StyleTextWarning` - Warning state text (yellow)
+- `StyleBgLight` - Light background color
+- `StyleBgDark` - Dark background color
+
+### Usage Example
+
+```go
+import (
+    "github.com/dracory/base/email"
+    "github.com/dracory/hb"
+)
+
+// Create styled email content
+h1 := hb.Heading1().
+    HTML("Welcome to Our Service").
+    Style(email.StyleHeading1)
+
+p := hb.Paragraph().
+    HTML("Thank you for registering with us.").
+    Style(email.StyleParagraph)
+
+button := hb.Hyperlink().
+    Text("Get Started").
+    Href("https://example.com/start").
+    Style(email.StyleButtonPrimary)
+
+alert := hb.Div().
+    HTML("Important: Please verify your email address.").
+    Style(email.StyleAlertInfo)
+
+content := hb.Div().Children([]hb.TagInterface{
+    h1,
+    p,
+    button,
+    alert,
+}).ToHTML()
+
+// Generate full email template
+template := email.DefaultTemplate(email.TemplateOptions{
+    Title:   "Welcome",
+    Content: content,
+    AppName: "My Application",
+})
+```
