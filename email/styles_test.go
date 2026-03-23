@@ -376,12 +376,12 @@ func TestUtilityStyles(t *testing.T) {
 		{
 			name:     "StyleBgLight",
 			style:    StyleBgLight,
-			contains: []string{"background-color: #f8f9fa"},
+			contains: []string{"background-color: #F8F9FA"},
 		},
 		{
 			name:     "StyleBgDark",
 			style:    StyleBgDark,
-			contains: []string{"background-color: #343a40"},
+			contains: []string{"background-color: #343A40"},
 		},
 	}
 

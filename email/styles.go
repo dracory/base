@@ -1,5 +1,34 @@
 package email
 
+// BrandColor allows projects to customize email colors to match their brand.
+// These variables can be overridden in a project's init() function.
+var (
+	// ColorPrimary is the main brand color (default: blue)
+	// Override example: email.ColorPrimary = "#6f42c1" // purple
+	ColorPrimary = "#007BFF"
+
+	// ColorSecondary is for secondary elements (default: gray)
+	ColorSecondary = "#6C757D"
+
+	// ColorSuccess is for positive/success states (default: green)
+	ColorSuccess = "#28A745"
+
+	// ColorDanger is for errors/danger states (default: red)
+	ColorDanger = "#DC3545"
+
+	// ColorWarning is for warnings (default: yellow/orange)
+	ColorWarning = "#FFC107"
+
+	// ColorInfo is for informational messages (default: teal/cyan)
+	ColorInfo = "#17A2B8"
+
+	// ColorLight is for light backgrounds (default: light gray)
+	ColorLight = "#F8F9FA"
+
+	// ColorDark is for dark elements (default: dark gray)
+	ColorDark = "#343A40"
+)
+
 // Typography Styles
 //
 // These constants define inline CSS styles for text elements in HTML emails.
@@ -23,23 +52,24 @@ const (
 
 // Button Styles
 //
-// These constants define inline CSS styles for button/link elements.
+// These variables define inline CSS styles for button/link elements.
+// They use BrandColor variables which can be customized per-project.
 // Use these for call-to-action links in emails.
-const (
-	// StyleButtonPrimary is the main call-to-action button (blue background)
-	StyleButtonPrimary = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: white; background-color: #007BFF; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid #007BFF;"
+var (
+	// StyleButtonPrimary is the main call-to-action button (uses ColorPrimary)
+	StyleButtonPrimary = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: white; background-color: " + ColorPrimary + "; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid " + ColorPrimary + ";"
 
-	// StyleButtonSecondary is a secondary action button (outlined, no background)
-	StyleButtonSecondary = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: #007BFF; background-color: transparent; text-align: center; text-decoration: none; border-radius: 6px; border: 2px solid #007BFF;"
+	// StyleButtonSecondary is a secondary action button (outlined, uses ColorPrimary)
+	StyleButtonSecondary = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: " + ColorPrimary + "; background-color: transparent; text-align: center; text-decoration: none; border-radius: 6px; border: 2px solid " + ColorPrimary + ";"
 
-	// StyleButtonSuccess is for positive actions (green background)
-	StyleButtonSuccess = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: white; background-color: #28A745; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid #28A745;"
+	// StyleButtonSuccess is for positive actions (uses ColorSuccess)
+	StyleButtonSuccess = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: white; background-color: " + ColorSuccess + "; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid " + ColorSuccess + ";"
 
-	// StyleButtonDanger is for destructive actions (red background)
-	StyleButtonDanger = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: white; background-color: #DC3545; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid #DC3545;"
+	// StyleButtonDanger is for destructive actions (uses ColorDanger)
+	StyleButtonDanger = "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: white; background-color: " + ColorDanger + "; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid " + ColorDanger + ";"
 
-	// StyleButtonSmall is a smaller button variant (14px, less padding)
-	StyleButtonSmall = "display: inline-block; padding: 8px 16px; font-size: 14px; font-weight:600; color: white; background-color: #007BFF; text-align: center; text-decoration: none; border-radius: 4px; border: 1px solid #007BFF;"
+	// StyleButtonSmall is a smaller button variant (uses ColorPrimary)
+	StyleButtonSmall = "display: inline-block; padding: 8px 16px; font-size: 14px; font-weight:600; color: white; background-color: " + ColorPrimary + "; text-align: center; text-decoration: none; border-radius: 4px; border: 1px solid " + ColorPrimary + ";"
 )
 
 // Layout Styles
@@ -63,16 +93,16 @@ const (
 //
 // These constants define inline CSS styles for alert/notification boxes.
 const (
-	// StyleAlertInfo is for informational messages (blue)
+	// StyleAlertInfo is for informational messages (uses ColorInfo)
 	StyleAlertInfo = "padding: 12px 16px; background-color: #D1ECF1; border: 1px solid #BEE5EB; border-radius: 4px; color: #0C5460; margin: 10px 0px;"
 
-	// StyleAlertSuccess is for success messages (green)
+	// StyleAlertSuccess is for success messages (uses ColorSuccess)
 	StyleAlertSuccess = "padding: 12px 16px; background-color: #D4EDDA; border: 1px solid #C3E6CB; border-radius: 4px; color: #155724; margin: 10px 0px;"
 
-	// StyleAlertWarning is for warning messages (yellow)
+	// StyleAlertWarning is for warning messages (uses ColorWarning)
 	StyleAlertWarning = "padding: 12px 16px; background-color: #FFF3CD; border: 1px solid #FFEAA7; border-radius: 4px; color: #856404; margin: 10px 0px;"
 
-	// StyleAlertDanger is for error/danger messages (red)
+	// StyleAlertDanger is for error/danger messages (uses ColorDanger)
 	StyleAlertDanger = "padding: 12px 16px; background-color: #F8D7DA; border: 1px solid #F5C6CB; border-radius: 4px; color: #721C24; margin: 10px 0px;"
 )
 
@@ -106,8 +136,9 @@ const (
 
 // Utility Styles
 //
-// These constants define inline CSS utility styles for common formatting needs.
-const (
+// These variables define inline CSS utility styles for common formatting needs.
+// They use BrandColor variables which can be customized per-project.
+var (
 	// StyleTextCenter centers text horizontally
 	StyleTextCenter = "text-align: center;"
 
@@ -117,21 +148,85 @@ const (
 	// StyleTextMuted is for muted/secondary text (gray)
 	StyleTextMuted = "color: #6c757d;"
 
-	// StyleTextPrimary is for primary brand color text (blue)
-	StyleTextPrimary = "color: #007BFF;"
+	// StyleTextPrimary is for primary brand color text (uses ColorPrimary)
+	StyleTextPrimary = "color: " + ColorPrimary + ";"
 
-	// StyleTextSuccess is for success state text (green)
-	StyleTextSuccess = "color: #28A745;"
+	// StyleTextSuccess is for success state text (uses ColorSuccess)
+	StyleTextSuccess = "color: " + ColorSuccess + ";"
 
-	// StyleTextDanger is for danger/error state text (red)
-	StyleTextDanger = "color: #DC3545;"
+	// StyleTextDanger is for danger/error state text (uses ColorDanger)
+	StyleTextDanger = "color: " + ColorDanger + ";"
 
-	// StyleTextWarning is for warning state text (yellow)
-	StyleTextWarning = "color: #FFC107;"
+	// StyleTextWarning is for warning state text (uses ColorWarning)
+	StyleTextWarning = "color: " + ColorWarning + ";"
 
-	// StyleBgLight is for light background color
-	StyleBgLight = "background-color: #f8f9fa;"
+	// StyleBgLight is for light background color (uses ColorLight)
+	StyleBgLight = "background-color: " + ColorLight + ";"
 
-	// StyleBgDark is for dark background color
-	StyleBgDark = "background-color: #343a40;"
+	// StyleBgDark is for dark background color (uses ColorDark)
+	StyleBgDark = "background-color: " + ColorDark + ";"
 )
+
+// StyleBuilder provides functions to generate custom styles with specific colors.
+// These are useful when you need styles with colors different from the BrandColor variables.
+
+// ButtonStyle generates a custom button style with the specified colors.
+// Use this when you need a button with a specific brand color not covered by BrandColor variables.
+//
+// Example:
+//
+//	customButton := email.ButtonStyle("#6f42c1", "#5a32a3", "white")
+//	// Creates a purple button with darker purple border and white text
+func ButtonStyle(backgroundColor, borderColor, textColor string) string {
+	return "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: " + textColor + "; background-color: " + backgroundColor + "; text-align: center; text-decoration: none; border-radius: 6px; border: 1px solid " + borderColor + ";"
+}
+
+// ButtonStyleSecondary generates a custom outlined button style.
+// Use this for secondary actions with custom brand colors.
+//
+// Example:
+//
+//	customSecondaryBtn := email.ButtonStyleSecondary("#6f42c1")
+//	// Creates an outlined purple button
+func ButtonStyleSecondary(color string) string {
+	return "display: inline-block; padding: 12px 24px; font-size: 16px; font-weight:600; color: " + color + "; background-color: transparent; text-align: center; text-decoration: none; border-radius: 6px; border: 2px solid " + color + ";"
+}
+
+// AlertStyle generates a custom alert style with specified colors.
+// Use this when you need alerts with custom color schemes.
+//
+// Example:
+//
+//	customAlert := email.AlertStyle("#6f42c1", "#e9d5ff", "#3b0764")
+//	// Creates a purple-themed alert
+func AlertStyle(backgroundColor, borderColor, textColor string) string {
+	return "padding: 12px 16px; background-color: " + backgroundColor + "; border: 1px solid " + borderColor + "; border-radius: 4px; color: " + textColor + "; margin: 10px 0px;"
+}
+
+// SetBrandColors allows setting all brand colors at once.
+// Call this in your project's init() function to customize email colors.
+//
+// Example:
+//
+//	func init() {
+//	    email.SetBrandColors(
+//	        "#6f42c1", // Primary (purple)
+//	        "#6C757D", // Secondary (gray)
+//	        "#28A745", // Success (green)
+//	        "#DC3545", // Danger (red)
+//	        "#FFC107", // Warning (yellow)
+//	        "#17A2B8", // Info (teal)
+//	        "#F8F9FA", // Light
+//	        "#343A40", // Dark
+//	    )
+//	}
+func SetBrandColors(primary, secondary, success, danger, warning, info, light, dark string) {
+	ColorPrimary = primary
+	ColorSecondary = secondary
+	ColorSuccess = success
+	ColorDanger = danger
+	ColorWarning = warning
+	ColorInfo = info
+	ColorLight = light
+	ColorDark = dark
+}

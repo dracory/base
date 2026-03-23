@@ -179,3 +179,152 @@ template := email.DefaultTemplate(email.TemplateOptions{
     AppName: "My Application",
 })
 ```
+
+### Using Email Components (Laravel-style)
+
+This package provides a set of pre-styled components that make building emails as easy as in Laravel. They return `*hb.Tag` objects that you can further customize if needed.
+
+```go
+import "github.com/dracory/base/email"
+
+// Build a complex email body using components
+content := email.Container(
+    email.Heading("Welcome to Dracory!", 1),
+    email.Paragraph("We're glad to have you on board."),
+    email.Section(
+        email.Heading("Your Profile Status", 2),
+        email.Alert("Your email is not verified yet.", "warning"),
+        email.Button("Verify Email", "https://example.com/verify"),
+    ),
+    email.Divider(),
+    email.Table(
+        []string{"Feature", "Status"},
+        [][]string{
+            {"API Access", "Enabled"},
+            {"Storage", "10GB"},
+        },
+    ),
+).ToHTML()
+
+// Use the generated content in the template
+htmlBody := email.DefaultTemplate(email.TemplateOptions{
+    Title:   "Welcome",
+    Content: content,
+    AppName: "MyApp",
+})
+```
+
+
+## Brand Color Customization
+
+The package provides brand color variables that can be customized to match your project's brand identity.
+
+### Available Color Variables
+
+- `ColorPrimary` - Main brand color (default: `#007BFF` blue)
+- `ColorSecondary` - Secondary elements (default: `#6C757D` gray)
+- `ColorSuccess` - Success states (default: `#28A745` green)
+- `ColorDanger` - Error/danger states (default: `#DC3545` red)
+- `ColorWarning` - Warnings (default: `#FFC107` yellow)
+- `ColorInfo` - Informational messages (default: `#17A2B8` teal)
+- `ColorLight` - Light backgrounds (default: `#F8F9FA`)
+- `ColorDark` - Dark elements (default: `#343A40`)
+
+### Method 1: Override Individual Colors
+
+Customize specific colors in your project's `init()` function:
+
+```go
+package main
+
+import (
+    "github.com/dracory/base/email"
+)
+
+func init() {
+    // Set your brand's primary color (e.g., purple)
+    email.ColorPrimary = "#6f42c1"
+    
+    // Set your brand's header color for templates
+    email.ColorInfo = "#17A2B8" // Teal for Dracory brand
+}
+```
+
+### Method 2: Set All Brand Colors at Once
+
+Use `SetBrandColors()` to customize all colors in one call:
+
+```go
+func init() {
+    email.SetBrandColors(
+        "#6f42c1", // Primary (purple)
+        "#6C757D", // Secondary (gray)
+        "#28A745", // Success (green)
+        "#DC3545", // Danger (red)
+        "#FFC107", // Warning (yellow)
+        "#17A2B8", // Info (teal)
+        "#F8F9FA", // Light
+        "#343A40", // Dark
+    )
+}
+```
+
+### Method 3: Custom Style Builders
+
+For one-off custom colors, use style builder functions:
+
+```go
+// Create a custom purple button
+purpleButton := email.ButtonStyle("#6f42c1", "#5a32a3", "white")
+
+// Create an outlined button with custom color
+outlinedPurple := email.ButtonStyleSecondary("#6f42c1")
+
+// Create a custom alert with brand colors
+customAlert := email.AlertStyle("#e9d5ff", "#d8b4fe", "#3b0764")
+```
+
+### Usage Example with Custom Brand
+
+```go
+package main
+
+import (
+    "github.com/dracory/base/email"
+    "github.com/dracory/hb"
+)
+
+func init() {
+    // Customize for a purple brand theme
+    email.ColorPrimary = "#6f42c1"
+}
+
+func sendWelcomeEmail() {
+    // This button will now be purple instead of blue
+    button := hb.Hyperlink().
+        Text("Get Started").
+        Href("https://example.com/start").
+        Style(email.StyleButtonPrimary)
+    
+    // This text will also use the purple brand color
+    brandText := hb.Span().
+        Text("Premium Features").
+        Style(email.StyleTextPrimary)
+    
+    // Generate email with custom header color
+    template := email.DefaultTemplate(email.TemplateOptions{
+        Title:                 "Welcome",
+        Content:               content,
+        AppName:               "MyApp",
+        HeaderBackgroundColor: "#6f42c1", // Match brand color
+    })
+}
+```
+
+### Important Notes
+
+- Color variables must be set before using any styles that depend on them
+- The best place to set colors is in your project's `init()` function
+- Color changes affect all emails using the base package styles
+- For template headers, use `HeaderBackgroundColor` in `TemplateOptions`
+```
