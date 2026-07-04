@@ -25,7 +25,7 @@ require (
 	github.com/spf13/cast v1.10.0
 	github.com/yuin/goldmark v1.7.17
 	golang.org/x/crypto v0.49.0
-	golang.org/x/image v0.37.0
+	golang.org/x/image v0.41.0
 )
 
 require (
@@ -49,5 +49,5 @@ require (
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
