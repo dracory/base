@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	stripe "github.com/stripe/stripe-go/v73"
-	stripeSession "github.com/stripe/stripe-go/v73/checkout/session"
+	stripe "github.com/stripe/stripe-go/v86"
+	stripeSession "github.com/stripe/stripe-go/v86/checkout/session"
 )
 
 var (
