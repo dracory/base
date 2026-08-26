@@ -15,10 +15,10 @@ func DisplayNameFull(user userstore.UserInterface) string {
 		return "n/a"
 	}
 
-	displayName := user.FirstName() + " " + user.LastName()
+	displayName := strings.TrimSpace(user.GetFirstName() + " " + user.GetLastName())
 
-	if strings.TrimSpace(displayName) == "" {
-		return user.Email()
+	if displayName == "" {
+		return user.GetEmail()
 	}
 
 	return displayName
@@ -30,7 +30,7 @@ func IsClient(user userstore.UserInterface) bool {
 	if user == nil {
 		return false
 	}
-	return user.Meta("is_client") == "yes"
+	return user.GetMeta("is_client") == "yes"
 }
 
 // SetIsClient sets or removes the client status for a user.

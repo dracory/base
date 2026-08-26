@@ -47,8 +47,8 @@ req = session.SetAuthSession(r, authenticatedSession)
 user := session.GetAuthUser(r)
 if user != nil {
     displayName := session.DisplayNameFull(user)
-    email := user.Email()
-    userID := user.ID()
+    email := user.GetEmail()
+    userID := user.GetID()
 }
 
 // Check if user is a client

@@ -82,7 +82,7 @@ user = nil                                            → "n/a"
 
 Checks if a user is marked as a client by looking for the `"is_client"` metadata key:
 
-- Returns `true` if `user.Meta("is_client") == "yes"`
+- Returns `true` if `user.GetMeta("is_client") == "yes"`
 - Returns `false` for any other value or if user is nil
 - Case-sensitive comparison
 
@@ -109,9 +109,9 @@ func UserProfileHandler(w http.ResponseWriter, r *http.Request) {
 
     profile := map[string]interface{}{
         "displayName": user.DisplayNameFull(currentUser),
-        "email": currentUser.Email(),
+        "email": currentUser.GetEmail(),
         "isClient": user.IsClient(currentUser),
-        "role": currentUser.Role(),
+        "role": currentUser.GetRole(),
     }
 
     w.Header().Set("Content-Type", "application/json")
@@ -158,11 +158,11 @@ func UserManagementHandler(w http.ResponseWriter, r *http.Request) {
     var userInfos []UserInfo
     for _, u := range users {
         userInfos = append(userInfos, UserInfo{
-            ID:          u.ID(),
+            ID:          u.GetID(),
             DisplayName: user.DisplayNameFull(u),
-            Email:       u.Email(),
+            Email:       u.GetEmail(),
             IsClient:    user.IsClient(u),
-            Status:      u.Status(),
+            Status:      u.GetStatus(),
         })
     }
 
@@ -199,7 +199,7 @@ func ToggleClientStatusHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     response := map[string]interface{}{
-        "userID": user.ID(),
+        "userID": user.GetID(),
         "isClient": user.IsClient(user),
         "message": fmt.Sprintf("Client status %s", map[bool]string{true: "enabled", false: "disabled"}[user.IsClient(user)]),
     }

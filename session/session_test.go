@@ -31,10 +31,10 @@ func TestGetAuthSession(t *testing.T) {
 }
 
 func TestGetAuthSessionFromContext(t *testing.T) {
-	// Test with nil context
-	session := GetAuthSessionFromContext(nil)
+	// Test with empty context (no session stored)
+	session := GetAuthSessionFromContext(context.TODO())
 	if session != nil {
-		t.Error("Expected nil session for nil context")
+		t.Error("Expected nil session for empty context")
 	}
 
 	// Test with context without session
@@ -119,6 +119,74 @@ func TestGetAPIAuthUser(t *testing.T) {
 	user = GetAPIAuthUser(req)
 	if user != nil {
 		t.Error("Expected nil user for nil user in context")
+	}
+}
+
+func TestGetAPIAuthSession(t *testing.T) {
+	// Test with nil request
+	session := GetAPIAuthSession(nil)
+	if session != nil {
+		t.Error("Expected nil session for nil request")
+	}
+
+	// Test with request without session
+	req := &http.Request{}
+	session = GetAPIAuthSession(req)
+	if session != nil {
+		t.Error("Expected nil session for request without session")
+	}
+
+	// Test with request with nil session in context
+	ctx := SetAPIAuthSessionInContext(context.TODO(), nil)
+	req = req.WithContext(ctx)
+
+	session = GetAPIAuthSession(req)
+	if session != nil {
+		t.Error("Expected nil session for nil session in context")
+	}
+}
+
+func TestGetAPIAuthSessionFromContext(t *testing.T) {
+	// Test with empty context (no session stored)
+	session := GetAPIAuthSessionFromContext(context.TODO())
+	if session != nil {
+		t.Error("Expected nil session for empty context")
+	}
+
+	// Test with context without session
+	ctx := context.Background()
+	session = GetAPIAuthSessionFromContext(ctx)
+	if session != nil {
+		t.Error("Expected nil session for context without session")
+	}
+
+	// Test with context with nil session
+	ctx = SetAPIAuthSessionInContext(ctx, nil)
+	session = GetAPIAuthSessionFromContext(ctx)
+	if session != nil {
+		t.Error("Expected nil session for nil session in context")
+	}
+}
+
+func TestSetAPIAuthSession(t *testing.T) {
+	// Test with nil request
+	req := SetAPIAuthSession(nil, nil)
+	if req != nil {
+		t.Error("Expected nil request for nil input")
+	}
+
+	// Test with nil session
+	req = &http.Request{}
+	req = SetAPIAuthSession(req, nil)
+	if req == nil {
+		t.Error("Expected request to be returned")
+	}
+
+	// Test with valid request but nil session (no-op)
+	req = &http.Request{}
+	req = SetAPIAuthSession(req, nil)
+	if req == nil {
+		t.Error("Expected request to be returned")
 	}
 }
 

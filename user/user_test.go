@@ -31,7 +31,7 @@ func TestDisplayNameFull(t *testing.T) {
 	user.SetEmail("john@example.com")
 
 	name = DisplayNameFull(user)
-	expected = "John " // First name + space + empty last name
+	expected = "John" // First name only, trailing space trimmed
 	if name != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, name)
 	}
@@ -42,7 +42,7 @@ func TestDisplayNameFull(t *testing.T) {
 	user.SetEmail("john@example.com")
 
 	name = DisplayNameFull(user)
-	expected = " Doe" // Empty first name + space + last name
+	expected = "Doe" // Last name only, leading space trimmed
 	if name != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, name)
 	}

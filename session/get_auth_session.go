@@ -74,3 +74,67 @@ func SetAuthSessionInContext(ctx context.Context, session sessionstore.SessionIn
 
 	return context.WithValue(ctx, AuthenticatedSessionContextKey{}, session)
 }
+
+// APIAuthenticatedSessionContextKey is the context key used to store the API authenticated session
+type APIAuthenticatedSessionContextKey struct{}
+
+// GetAPIAuthSession returns the API authenticated session from the request context.
+func GetAPIAuthSession(r *http.Request) sessionstore.SessionInterface {
+	if r == nil {
+		return nil
+	}
+
+	value := r.Context().Value(APIAuthenticatedSessionContextKey{})
+
+	if value == nil {
+		return nil
+	}
+
+	session, ok := value.(sessionstore.SessionInterface)
+	if !ok {
+		return nil
+	}
+
+	return session
+}
+
+// GetAPIAuthSessionFromContext returns the API authenticated session from a context.
+// This is useful when you have a context but not the original request.
+func GetAPIAuthSessionFromContext(ctx context.Context) sessionstore.SessionInterface {
+	if ctx == nil {
+		return nil
+	}
+
+	value := ctx.Value(APIAuthenticatedSessionContextKey{})
+
+	if value == nil {
+		return nil
+	}
+
+	session, ok := value.(sessionstore.SessionInterface)
+	if !ok {
+		return nil
+	}
+
+	return session
+}
+
+// SetAPIAuthSession sets the API authenticated session in the request context.
+func SetAPIAuthSession(r *http.Request, session sessionstore.SessionInterface) *http.Request {
+	if r == nil || session == nil {
+		return r
+	}
+
+	ctx := SetAPIAuthSessionInContext(r.Context(), session)
+	return r.WithContext(ctx)
+}
+
+// SetAPIAuthSessionInContext sets the API authenticated session in the context.
+// Returns a new context with the session stored.
+func SetAPIAuthSessionInContext(ctx context.Context, session sessionstore.SessionInterface) context.Context {
+	if ctx == nil || session == nil {
+		return ctx
+	}
+
+	return context.WithValue(ctx, APIAuthenticatedSessionContextKey{}, session)
+}
