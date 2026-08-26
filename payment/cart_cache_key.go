@@ -1,4 +1,4 @@
-package http
+package payment
 
 import (
 	"crypto/sha256"
