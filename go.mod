@@ -15,6 +15,7 @@ require (
 	github.com/dracory/hb v1.88.0
 	github.com/dracory/req v0.1.0
 	github.com/dracory/sessionstore v1.19.0
+	github.com/dracory/str v0.18.0
 	github.com/dracory/ui v0.17.0
 	github.com/dracory/userstore v1.18.0
 	github.com/dromara/carbon/v2 v2.6.17
@@ -35,7 +36,6 @@ require (
 	github.com/dracory/crypto v0.3.0 // indirect
 	github.com/dracory/dataobject v1.7.0 // indirect
 	github.com/dracory/neat v0.41.0 // indirect
-	github.com/dracory/str v0.18.0 // indirect
 	github.com/dracory/uid v1.9.0 // indirect
 	github.com/dracory/websrv v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
