@@ -9,6 +9,7 @@ require (
 	github.com/darkoatanasovski/htmltags v1.0.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/dracory/blockeditor v0.24.0
+	github.com/dracory/cdn v1.13.0
 	github.com/dracory/env v1.4.0
 	github.com/dracory/envenc v1.5.0
 	github.com/dracory/form v0.23.0
@@ -22,6 +23,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/pkg/errors v0.9.1
+	github.com/robertkrimen/otto v0.5.1
 	github.com/samber/lo v1.53.0
 	github.com/spf13/cast v1.10.0
 	github.com/stripe/stripe-go/v86 v86.4.2
@@ -33,7 +35,6 @@ require (
 require (
 	github.com/dracory/api v1.8.0 // indirect
 	github.com/dracory/bs v0.16.0 // indirect
-	github.com/dracory/cdn v1.13.0 // indirect
 	github.com/dracory/crypto v0.3.0 // indirect
 	github.com/dracory/dataobject v1.7.0 // indirect
 	github.com/dracory/neat v0.61.0 // indirect
@@ -49,6 +50,7 @@ require (
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/term v0.48.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
+	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	modernc.org/libc v1.80.2 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
