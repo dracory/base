@@ -1,4 +1,4 @@
-package thumb
+package fileserve
 
 import (
 	"fmt"
@@ -7,8 +7,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/dracory/rtr"
 )
 
 // TestValidateURLSecurity tests the SSRF protection functionality
@@ -391,20 +389,14 @@ func TestIsPublicDomain_ServerLocal(t *testing.T) {
 func servePrepareData(method, target string) (data thumbnailControllerData, errMsg string, status int) {
 	c := &thumbnailController{}
 
-	router := rtr.NewRouter()
-	// Route using single-segment ':path'
-	route := rtr.NewRoute().
-		SetMethod(http.MethodGet).
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			d, e := c.prepareData(r)
-			return fmt.Sprintf("%s|%s|%d|%d|%d|%t|%t", e, d.path, d.width, d.height, d.quality, d.isURL, d.isCache)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		d, e := c.prepareData(r)
+		return fmt.Sprintf("%s|%s|%d|%d|%d|%t|%t", e, d.path, d.width, d.height, d.quality, d.isURL, d.isCache)
+	}
 
 	req := httptest.NewRequest(method, target, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	status = rr.Code
 	body := rr.Body.String()
@@ -516,18 +508,18 @@ func TestPrepareDataFilesLink(t *testing.T) {
 	})
 }
 
-// TestNewThumbController verifies the constructor creates a valid controller
-func TestNewThumbController(t *testing.T) {
+// TestnewThumbController verifies the constructor creates a valid controller
+func TestThumbControllerConstructor(t *testing.T) {
 	// Since we don't have easy access to a app in this test package,
 	// we'll just verify the constructor doesn't panic with nil
-	c := NewThumbController(Options{})
+	c := newThumbController(ThumbOptions{})
 	if c == nil {
-		t.Fatal("NewThumbController should not return nil even with nil app")
+		t.Fatal("newThumbController should not return nil even with nil app")
 	}
 }
 
 func TestThumbController_Handler_NilRegistry(t *testing.T) {
-	c := NewThumbController(Options{})
+	c := newThumbController(ThumbOptions{})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
 
@@ -606,19 +598,14 @@ func TestValidateURL_URLWithPort(t *testing.T) {
 // TestPrepareDataMissingParameters tests missing parameter validation
 func TestPrepareDataMissingParameters_MissingExtension(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			_, errMsg := c.prepareData(r)
-			return errMsg
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		_, errMsg := c.prepareData(r)
+		return errMsg
+	}
 
 	req := httptest.NewRequest("GET", "/th//300x200/70/image.jpg", nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	if rr.Body.String() != "image extension is missing" {
 		t.Errorf("Expected error %q, got %q", "image extension is missing", rr.Body.String())
@@ -627,19 +614,14 @@ func TestPrepareDataMissingParameters_MissingExtension(t *testing.T) {
 
 func TestPrepareDataMissingParameters_MissingSize(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			_, errMsg := c.prepareData(r)
-			return errMsg
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		_, errMsg := c.prepareData(r)
+		return errMsg
+	}
 
 	req := httptest.NewRequest("GET", "/th/jpg//70/image.jpg", nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	if rr.Body.String() != "size is missing" {
 		t.Errorf("Expected error %q, got %q", "size is missing", rr.Body.String())
@@ -648,19 +630,14 @@ func TestPrepareDataMissingParameters_MissingSize(t *testing.T) {
 
 func TestPrepareDataMissingParameters_MissingQuality(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			_, errMsg := c.prepareData(r)
-			return errMsg
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		_, errMsg := c.prepareData(r)
+		return errMsg
+	}
 
 	req := httptest.NewRequest("GET", "/th/jpg/300x200//image.jpg", nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	if rr.Body.String() != "quality is missing" {
 		t.Errorf("Expected error %q, got %q", "quality is missing", rr.Body.String())
@@ -669,19 +646,14 @@ func TestPrepareDataMissingParameters_MissingQuality(t *testing.T) {
 
 func TestPrepareDataMissingParameters_MissingPath(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			_, errMsg := c.prepareData(r)
-			return errMsg
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		_, errMsg := c.prepareData(r)
+		return errMsg
+	}
 
 	req := httptest.NewRequest("GET", "/th/jpg/300x200/70/", nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	if rr.Body.String() != "path is missing" {
 		t.Errorf("Expected error %q, got %q", "path is missing", rr.Body.String())
@@ -691,20 +663,15 @@ func TestPrepareDataMissingParameters_MissingPath(t *testing.T) {
 // TestPrepareDataURLNormalization tests URL path normalization
 func TestPrepareDataURLNormalization_HTTPURLNormalization(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
+	}
 
 	url := "/th/jpg/300x200/70/http/example.com/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -726,20 +693,15 @@ func TestPrepareDataURLNormalization_HTTPURLNormalization(t *testing.T) {
 
 func TestPrepareDataURLNormalization_HTTPSURLNormalization(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
+	}
 
 	url := "/th/jpg/300x200/70/https/example.com/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -761,20 +723,15 @@ func TestPrepareDataURLNormalization_HTTPSURLNormalization(t *testing.T) {
 
 func TestPrepareDataURLNormalization_CachePrefix(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
+	}
 
 	url := "/th/jpg/300x200/70/cache-mykey"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -796,20 +753,15 @@ func TestPrepareDataURLNormalization_CachePrefix(t *testing.T) {
 
 func TestPrepareDataURLNormalization_FilesPrefix(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%s|%t|%t|%t", data.path, data.isURL, data.isCache, data.isFiles)
+	}
 
 	url := "/th/jpg/300x200/70/files/uploads/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -832,20 +784,15 @@ func TestPrepareDataURLNormalization_FilesPrefix(t *testing.T) {
 // TestPrepareDataSizeParsing tests various size format parsing
 func TestPrepareDataSizeParsing_WidthAndHeight(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d|%d", data.width, data.height)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d|%d", data.width, data.height)
+	}
 
 	url := "/th/jpg/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -861,20 +808,15 @@ func TestPrepareDataSizeParsing_WidthAndHeight(t *testing.T) {
 
 func TestPrepareDataSizeParsing_WidthOnly(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d|%d", data.width, data.height)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d|%d", data.width, data.height)
+	}
 
 	url := "/th/jpg/500/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -890,20 +832,15 @@ func TestPrepareDataSizeParsing_WidthOnly(t *testing.T) {
 
 func TestPrepareDataSizeParsing_ZeroDimensions(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d|%d", data.width, data.height)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d|%d", data.width, data.height)
+	}
 
 	url := "/th/jpg/0x0/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -919,20 +856,15 @@ func TestPrepareDataSizeParsing_ZeroDimensions(t *testing.T) {
 
 func TestPrepareDataSizeParsing_LargeDimensions(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d|%d", data.width, data.height)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d|%d", data.width, data.height)
+	}
 
 	url := "/th/jpg/4000x3000/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	parts := strings.Split(body, "|")
@@ -1187,20 +1119,15 @@ func TestValidateURLWithSpecialCases_NoScheme(t *testing.T) {
 // TestPrepareDataQualityParsing tests quality parameter parsing
 func TestPrepareDataQualityParsing_LowQuality(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d", data.quality)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d", data.quality)
+	}
 
 	url := "/th/jpg/300x200/30/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	var q int64
@@ -1212,20 +1139,15 @@ func TestPrepareDataQualityParsing_LowQuality(t *testing.T) {
 
 func TestPrepareDataQualityParsing_MediumQuality(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d", data.quality)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d", data.quality)
+	}
 
 	url := "/th/jpg/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	var q int64
@@ -1237,20 +1159,15 @@ func TestPrepareDataQualityParsing_MediumQuality(t *testing.T) {
 
 func TestPrepareDataQualityParsing_HighQuality(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d", data.quality)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d", data.quality)
+	}
 
 	url := "/th/jpg/300x200/95/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	var q int64
@@ -1262,20 +1179,15 @@ func TestPrepareDataQualityParsing_HighQuality(t *testing.T) {
 
 func TestPrepareDataQualityParsing_ZeroQuality(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d", data.quality)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d", data.quality)
+	}
 
 	url := "/th/jpg/300x200/0/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	var q int64
@@ -1287,20 +1199,15 @@ func TestPrepareDataQualityParsing_ZeroQuality(t *testing.T) {
 
 func TestPrepareDataQualityParsing_InvalidQuality(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return fmt.Sprintf("%d", data.quality)
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return fmt.Sprintf("%d", data.quality)
+	}
 
 	url := "/th/jpg/300x200/abc/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	var q int64
@@ -1346,20 +1253,15 @@ func TestValidateURLWithCorporateDomains_CorpInSubdomain(t *testing.T) {
 // TestPrepareDataExtensionHandling tests extension parameter handling
 func TestPrepareDataExtensionHandling_JPEGExtension(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return data.extension
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return data.extension
+	}
 
 	url := "/th/jpg/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	if body != "jpg" {
@@ -1369,20 +1271,15 @@ func TestPrepareDataExtensionHandling_JPEGExtension(t *testing.T) {
 
 func TestPrepareDataExtensionHandling_PNGExtension(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return data.extension
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return data.extension
+	}
 
 	url := "/th/png/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	if body != "png" {
@@ -1392,20 +1289,15 @@ func TestPrepareDataExtensionHandling_PNGExtension(t *testing.T) {
 
 func TestPrepareDataExtensionHandling_GIFExtension(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return data.extension
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return data.extension
+	}
 
 	url := "/th/gif/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	if body != "gif" {
@@ -1415,20 +1307,15 @@ func TestPrepareDataExtensionHandling_GIFExtension(t *testing.T) {
 
 func TestPrepareDataExtensionHandling_UppercaseExtension(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return data.extension
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return data.extension
+	}
 
 	url := "/th/JPG/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	if body != "jpg" {
@@ -1438,20 +1325,15 @@ func TestPrepareDataExtensionHandling_UppercaseExtension(t *testing.T) {
 
 func TestPrepareDataExtensionHandling_WebPExtension(t *testing.T) {
 	c := &thumbnailController{}
-	router := rtr.NewRouter()
-	route := rtr.NewRoute().
-		SetMethod("GET").
-		SetPath("/th/:extension/:size/:quality/:path").
-		SetHTMLHandler(func(w http.ResponseWriter, r *http.Request) string {
-			data, _ := c.prepareData(r)
-			return data.extension
-		})
-	router.AddRoute(route)
+	handler := func(w http.ResponseWriter, r *http.Request) string {
+		data, _ := c.prepareData(r)
+		return data.extension
+	}
 
 	url := "/th/webp/300x200/70/image.jpg"
 	req := httptest.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	_, _ = rr.WriteString(handler(rr, req))
 
 	body := rr.Body.String()
 	if body != "webp" {

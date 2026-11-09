@@ -218,12 +218,12 @@ func TestFindMIMETypeAllFormats_Empty(t *testing.T) {
 	}
 }
 
-// TestNewFileServeController verifies the constructor properly initializes the controller
-func TestNewFileServeController(t *testing.T) {
+// TestnewFileServeController verifies the constructor properly initializes the controller
+func TestFileServeControllerConstructor(t *testing.T) {
 	// Test with nil storage
-	c := NewFileServeController(nil)
+	c := newFileServeController(nil)
 	if c == nil {
-		t.Fatal("NewFileServeController(nil) should not return nil")
+		t.Fatal("newFileServeController(nil) should not return nil")
 	}
 	if c.storage != nil {
 		t.Error("expected storage to be nil")
@@ -333,7 +333,7 @@ func TestHandler_ServesFileWithMimeType(t *testing.T) {
 	storage := &fakeStorage{files: map[string][]byte{
 		"/hello.txt": []byte("hi"),
 	}}
-	c := NewFileServeController(storage)
+	c := newFileServeController(storage)
 
 	req := httptest.NewRequest(http.MethodGet, "/files/hello.txt", nil)
 	rec := httptest.NewRecorder()
@@ -352,7 +352,7 @@ func TestHandler_ServesPng(t *testing.T) {
 	storage := &fakeStorage{files: map[string][]byte{
 		"/img.png": {0x89, 0x50},
 	}}
-	c := NewFileServeController(storage)
+	c := newFileServeController(storage)
 
 	req := httptest.NewRequest(http.MethodGet, "/media/img.png", nil)
 	rec := httptest.NewRecorder()
@@ -365,7 +365,7 @@ func TestHandler_ServesPng(t *testing.T) {
 }
 
 func TestHandler_NotFound(t *testing.T) {
-	c := NewFileServeController(&fakeStorage{files: map[string][]byte{}})
+	c := newFileServeController(&fakeStorage{files: map[string][]byte{}})
 
 	req := httptest.NewRequest(http.MethodGet, "/files/missing.txt", nil)
 	rec := httptest.NewRecorder()
@@ -375,7 +375,7 @@ func TestHandler_NotFound(t *testing.T) {
 }
 
 func TestHandler_StorageError(t *testing.T) {
-	c := NewFileServeController(&fakeStorage{err: errors.New("boom")})
+	c := newFileServeController(&fakeStorage{err: errors.New("boom")})
 
 	req := httptest.NewRequest(http.MethodGet, "/files/x.txt", nil)
 	rec := httptest.NewRecorder()

@@ -1,4 +1,4 @@
-package thumb
+package fileserve
 
 import (
 	"context"
@@ -17,13 +17,12 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/dracory/base/cfmt"
 	"github.com/dracory/base/img"
-	"github.com/dracory/rtr"
 	"github.com/dracory/str"
 	"github.com/samber/lo"
 	"github.com/spf13/cast"
 )
 
-// == OPTIONS ==================================================================
+// == THUMB OPTIONS ==================================================================
 
 // CacheInterface is the minimal cache contract required by the thumbnail
 // controller. It is satisfied by cachego.Cache and compatible implementations.
@@ -38,21 +37,10 @@ type CacheInterface interface {
 	Save(key string, value string, lifeTime time.Duration) error
 }
 
-// StorageInterface is the minimal file storage contract required by the
-// thumbnail controller for serving "files/" paths. It is satisfied by
-// filesystem.StorageInterface and compatible implementations.
-type StorageInterface interface {
-	// Exists checks if a file exists at the given path
-	Exists(filePath string) (bool, error)
-
-	// ReadFile reads the file at the given path
-	ReadFile(filePath string) ([]byte, error)
-}
-
-// Options configures the thumbnail controller. All fields are optional; a
-// zero-value Options produces a working controller with no caching, no file
+// ThumbOptions configures the thumbnail controller. All fields are optional; a
+// zero-value ThumbOptions produces a working controller with no caching, no file
 // storage, the default logger, and os.ReadFile as the resource reader.
-type Options struct {
+type ThumbOptions struct {
 	// Logger receives error and info messages. Defaults to slog.Default().
 	Logger *slog.Logger
 
@@ -68,21 +56,26 @@ type Options struct {
 	ResourceReader func(path string) ([]byte, error)
 }
 
-// == CONSTRUCTOR ==============================================================
+// == HANDLER ==================================================================
 
-// NewThumbController creates a new thumbnail controller instance.
+// ThumbHandler returns a handler that serves generated thumbnails.
 //
 // Parameters:
-//   - options: Services the controller depends on (all optional)
+//   - options: Services the handler depends on (all optional)
 //
 // Returns:
-//   - *thumbnailController: New controller instance ready for use
+//   - func(w, r) string: Handler ready for use with any router
 //
 // Example:
 //
-//	controller := NewThumbController(thumb.Options{Logger: logger, Cache: fileCache})
-//	// Use controller for handling thumbnail requests
-func NewThumbController(options Options) *thumbnailController {
+//	handler := fileserve.ThumbHandler(fileserve.ThumbOptions{Logger: logger, Cache: fileCache})
+//	route.SetHTMLHandler(handler)
+func ThumbHandler(options ThumbOptions) func(w http.ResponseWriter, r *http.Request) string {
+	return newThumbController(options).Handler
+}
+
+// newThumbController creates the internal controller backing ThumbHandler.
+func newThumbController(options ThumbOptions) *thumbnailController {
 	return &thumbnailController{options: options}
 }
 
@@ -111,7 +104,7 @@ func NewThumbController(options Options) *thumbnailController {
 // Type:
 //   - options: Services the controller depends on (cache, storage, logger)
 type thumbnailController struct {
-	options Options
+	options ThumbOptions
 }
 
 // logger returns the configured logger, or slog.Default() when none is set.
@@ -273,13 +266,26 @@ func (controller *thumbnailController) setHeaders(w http.ResponseWriter, fileExt
 //	}
 //	// Use data for thumbnail generation
 func (controller *thumbnailController) prepareData(r *http.Request) (data thumbnailControllerData, errorMessage string) {
-	data.extension, _ = rtr.GetParam(r, "extension")
+	// Route pattern: /th/{extension}/{size}/{quality}/{path...}
+	// Parse the path positionally so the handler works with any router.
+	var size, quality string
+	segments := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/"), "/", 5)
+	if len(segments) > 1 {
+		data.extension = segments[1]
+	}
+	if len(segments) > 2 {
+		size = segments[2]
+	}
+	if len(segments) > 3 {
+		quality = segments[3]
+	}
+	if len(segments) > 4 {
+		data.path = segments[4]
+	}
+
 	data.extension = strings.TrimSpace(strings.ToLower(data.extension))
-	size, _ := rtr.GetParam(r, "size")
 	size = strings.TrimSpace(size)
-	quality, _ := rtr.GetParam(r, "quality")
 	quality = strings.TrimSpace(quality)
-	data.path, _ = rtr.GetParam(r, "path")
 	data.path = strings.TrimSpace(data.path)
 	data.isURL = false
 	data.isCache = false
@@ -361,7 +367,7 @@ func (controller *thumbnailController) prepareData(r *http.Request) (data thumbn
 //     - Handles cache expiration gracefully
 //
 //  3. Local Files (default):
-//     - Uses Options.ResourceReader for file access
+//     - Uses ThumbOptions.ResourceReader for file access
 //     - Supports local file paths
 //     - Standard file I/O error handling
 //

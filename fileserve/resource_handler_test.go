@@ -22,7 +22,7 @@ func stubReader(uri string) (string, error) {
 // TestResourceHandlerServesResource ensures an existing resource is served
 // with the correct Content-Type.
 func TestResourceHandlerServesResource(t *testing.T) {
-	c := NewResourceController(stubReader, stubNotFound)
+	c := newResourceController(stubReader, stubNotFound)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/js/app.js", nil)
 	rec := httptest.NewRecorder()
@@ -42,7 +42,7 @@ func TestResourceHandlerServesResource(t *testing.T) {
 // TestResourceHandlerPrivateResource ensures paths starting with '.' return
 // 404 and the not-found handler output.
 func TestResourceHandlerPrivateResource(t *testing.T) {
-	c := NewResourceController(stubReader, stubNotFound)
+	c := newResourceController(stubReader, stubNotFound)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/.secrets.txt", nil)
 	rec := httptest.NewRecorder()
@@ -60,7 +60,7 @@ func TestResourceHandlerPrivateResource(t *testing.T) {
 // TestResourceHandlerMissingResource ensures missing resources go through
 // the not-found handler.
 func TestResourceHandlerMissingResource(t *testing.T) {
-	c := NewResourceController(stubReader, stubNotFound)
+	c := newResourceController(stubReader, stubNotFound)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/js/does_not_exist.js", nil)
 	rec := httptest.NewRecorder()
@@ -75,7 +75,7 @@ func TestResourceHandlerMissingResource(t *testing.T) {
 // TestResourceHandlerDefaultNotFound ensures a nil not-found handler falls
 // back to a default message.
 func TestResourceHandlerDefaultNotFound(t *testing.T) {
-	c := NewResourceController(stubReader, nil)
+	c := newResourceController(stubReader, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/resources/js/does_not_exist.js", nil)
 	rec := httptest.NewRecorder()
@@ -90,7 +90,7 @@ func TestResourceHandlerDefaultNotFound(t *testing.T) {
 // TestResourceHandlerReaderError ensures reader errors go through the
 // not-found handler.
 func TestResourceHandlerReaderError(t *testing.T) {
-	c := NewResourceController(func(uri string) (string, error) {
+	c := newResourceController(func(uri string) (string, error) {
 		return "", errors.New("boom")
 	}, stubNotFound)
 

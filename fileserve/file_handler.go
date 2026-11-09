@@ -29,12 +29,17 @@ type fileServeController struct {
 	storage StorageInterface
 }
 
-// == CONSTRUCTOR =============================================================
+// == HANDLER ================================================================
 
-// NewFileServeController creates a controller that serves files from the
-// given storage. A nil storage produces a "File storage not configured"
-// response instead of panicking.
-func NewFileServeController(storage StorageInterface) *fileServeController {
+// FileHandler returns a handler that serves files from the given storage.
+// A nil storage produces a "File storage not configured" response instead
+// of panicking.
+func FileHandler(storage StorageInterface) func(w http.ResponseWriter, r *http.Request) string {
+	return newFileServeController(storage).Handler
+}
+
+// newFileServeController creates the internal controller backing FileHandler.
+func newFileServeController(storage StorageInterface) *fileServeController {
 	return &fileServeController{storage: storage}
 }
 

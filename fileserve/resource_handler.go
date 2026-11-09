@@ -19,14 +19,14 @@ type resourceController struct {
 
 // == CONSTRUCTOR =============================================================
 
-// NewResourceController creates a controller that serves resources through
-// the given reader.
+// ResourceHandler returns a handler that serves resources through the given
+// reader.
 //
 // Parameters:
 //   - readResource: resolves a resource URI to its content (required)
 //   - notFound: fallback handler for private or missing resources. If nil,
 //     a plain "404 page not found" message is returned.
-func NewResourceController(
+func newResourceController(
 	readResource func(uri string) (string, error),
 	notFound func(w http.ResponseWriter, r *http.Request) string,
 ) *resourceController {
@@ -36,6 +36,15 @@ func NewResourceController(
 		}
 	}
 	return &resourceController{readResource: readResource, notFound: notFound}
+}
+
+// ResourceHandler returns a handler that serves resources through the given
+// reader. See newResourceController for parameter details.
+func ResourceHandler(
+	readResource func(uri string) (string, error),
+	notFound func(w http.ResponseWriter, r *http.Request) string,
+) func(w http.ResponseWriter, r *http.Request) string {
+	return newResourceController(readResource, notFound).Handler
 }
 
 // PUBLIC METHODS =============================================================
