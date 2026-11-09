@@ -1,6 +1,6 @@
 module github.com/dracory/base
 
-go 1.26.5
+go 1.27
 
 // replace github.com/dracory/envenc => ../envenc
 
@@ -14,6 +14,7 @@ require (
 	github.com/dracory/form v0.23.0
 	github.com/dracory/hb v1.88.0
 	github.com/dracory/req v0.1.0
+	github.com/dracory/rtr v1.11.0
 	github.com/dracory/sessionstore v1.19.0
 	github.com/dracory/str v0.18.0
 	github.com/dracory/ui v0.17.0
@@ -31,6 +32,7 @@ require (
 )
 
 require (
+	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/dracory/api v1.8.0 // indirect
 	github.com/dracory/bs v0.16.0 // indirect
 	github.com/dracory/cdn v1.11.0 // indirect
@@ -40,15 +42,17 @@ require (
 	github.com/dracory/uid v1.9.0 // indirect
 	github.com/dracory/websrv v0.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/jedib0t/go-pretty/v6 v6.8.3 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/mattn/go-runewidth v0.0.31 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/exp v0.0.0-20260824195058-e88cd73687aa // indirect
 	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	modernc.org/libc v1.75.5 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
